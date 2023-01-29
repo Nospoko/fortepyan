@@ -18,7 +18,7 @@ class PianoRoll:
     max_value: int
 
 
-def prepare_piano_roll(df: pd.DataFrame) -> PianoRoll:
+def prepare_piano_roll(df: pd.DataFrame, time: float = None) -> PianoRoll:
     n_seconds = np.ceil(df.end.max())
     n_time_steps = RESOLUTION * int(n_seconds)
     pianoroll = np.zeros((N_PITCHES, n_time_steps), np.uint8)
@@ -35,7 +35,10 @@ def prepare_piano_roll(df: pd.DataFrame) -> PianoRoll:
         note_end = np.round(note_end).astype(int)
         pitch_idx = int(row.pitch)
 
-        color_value = min_value + row.velocity
+        if time and note_on <= time * RESOLUTION < note_end:
+            color_value = 160
+        else:
+            color_value = min_value + row.velocity
         pianoroll[pitch_idx, note_on:note_end] = color_value
 
     for it in range(N_PITCHES):
@@ -57,7 +60,10 @@ def prepare_piano_roll(df: pd.DataFrame) -> PianoRoll:
 
 
 def sanitize_midi_frame(mf: pd.DataFrame) -> pd.DataFrame:
+    # Do not modify input data
     df = mf.copy()
+
+    # Make it start at 0.0
     df.end -= df.start.min()
     df.start -= df.start.min()
     duration_in = df.end.max()
@@ -65,6 +71,7 @@ def sanitize_midi_frame(mf: pd.DataFrame) -> pd.DataFrame:
     # 20 minutes?
     duration_threshold = 1200
     if duration_in > duration_threshold:
+        # TODO Logger
         print("Warning: playtime to long! Showing after trim")
         ids = df.end <= duration_threshold
         df = df[ids]
@@ -72,9 +79,21 @@ def sanitize_midi_frame(mf: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def draw_midi_frame(ax: plt.Axes, midi_frame: pd.DataFrame) -> plt.Axes:
+def draw_midi_frame(ax: plt.Axes, midi_frame: pd.DataFrame, time: float = None) -> plt.Axes:
+    """
+    Draws a pianoroll onto an ax.
+
+    Parameters:
+        ax: Matplotlib axis
+        midi_frame: Dataframe with piano key strokes information
+        time (Optional[float]): Use for dynamic visualization - will highlight notes
+            played at this *time* value
+
+    Returns:
+        ax: Matplotlib axis with pianoroll.
+    """
     df = sanitize_midi_frame(midi_frame)
-    piano_roll = prepare_piano_roll(df)
+    piano_roll = prepare_piano_roll(df, time=time)
 
     ax.imshow(
         piano_roll.roll,
@@ -99,16 +118,17 @@ def draw_midi_frame(ax: plt.Axes, midi_frame: pd.DataFrame) -> plt.Axes:
     ax.set_yticks(y_ticks)
     ax.set_yticklabels(pitch_labels)
 
-    # Show where the action is
+    # Show keyboard range where the music is
     y_min = piano_roll.lowest_pitch - 1
     y_max = piano_roll.highest_pitch + 1
     ax.set_ylim(y_min, y_max)
 
+    # Prepare x ticks and labels
     n_ticks = min(30, piano_roll.n_seconds)
     step = piano_roll.n_seconds * RESOLUTION / n_ticks
     x_ticks = np.arange(0, step * n_ticks, step)
     x_ticks = np.round(x_ticks)
-    labels = [round(xt / RESOLUTION, 2) for xt in x_ticks]
+    labels = [round(xt / RESOLUTION) for xt in x_ticks]
     ax.set_xticks(x_ticks)
     ax.set_xticklabels(labels, rotation=60)
     ax.set_xlabel("Time [s]")

@@ -2,8 +2,7 @@
 
 ### Development
 
-Pre-commit hooks with forced pytahon formatting ([black](https://github.com/psf/black), [flake8](https://flake8.pycqa.org/e
-n/latest/), and [isort](https://pycqa.github.io/isort/)):
+Pre-commit hooks with forced pytahon formatting ([black](https://github.com/psf/black), [flake8](https://flake8.pycqa.org/en/latest/), and [isort](https://pycqa.github.io/isort/)):
 
 ```sh
 pip install pre-commit
