@@ -1,4 +1,4 @@
-# fortepyan
+# fortepyan :musical_keyboard:
 
 ### Development
 
