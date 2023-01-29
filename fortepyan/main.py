@@ -1,8 +1,8 @@
-import pretty_midi
 import numpy as np
+import pretty_midi
 import pandas as pd
-from matplotlib import pyplot as plt
 import matplotlib.patches as patches
+from matplotlib import pyplot as plt
 
 
 def process_midi_file(path: str):
@@ -37,13 +37,13 @@ def draw_histograms(pitches, white, black):
     fig, ax = plt.subplots(figsize=[14, 3])
     for pitch in all_pitches:
         if pitch % 12 in white_mods:
-            patch = patches.Rectangle((pitch - 0.5, -key_length), 1, key_length, edgecolor='k', facecolor='white', alpha=0.9)
+            patch = patches.Rectangle((pitch - 0.5, -key_length), 1, key_length, edgecolor="k", facecolor="white", alpha=0.9)
         else:
-            patch = patches.Rectangle((pitch - 0.5, -key_length), 1, key_length, edgecolor='k', facecolor='black', alpha=0.9)
+            patch = patches.Rectangle((pitch - 0.5, -key_length), 1, key_length, edgecolor="k", facecolor="black", alpha=0.9)
         ax.add_patch(patch)
 
-    ax.bar(white.keys(), white.values(), color='teal', edgecolor='k')
-    ax.bar(black.keys(), black.values(), color='teal', edgecolor='k')
+    ax.bar(white.keys(), white.values(), color="teal", edgecolor="k")
+    ax.bar(black.keys(), black.values(), color="teal", edgecolor="k")
 
     x_ticks = np.arange(0, 128, 12, dtype=float)
     pitch_labels = [f"{pretty_midi.note_number_to_name(it)}" for it in x_ticks]
@@ -55,8 +55,8 @@ def draw_histograms(pitches, white, black):
     ax.set_yticks(yticks)
 
     ax.set_xlim(min(pitches) - 0.5, max(pitches) + 0.5)
-    ax.set_title('Your favorite keys')
+    ax.set_title("Your favorite keys")
 
-    ax.set_xlabel('Pitch Distribution', fontsize=14)
+    ax.set_xlabel("Pitch Distribution", fontsize=14)
 
     return ax

@@ -1,6 +1,7 @@
+from dataclasses import field, dataclass
+
 import pretty_midi
 import pandas as pd
-from dataclasses import field, dataclass
 
 
 @dataclass

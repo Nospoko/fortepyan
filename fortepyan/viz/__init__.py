@@ -1,3 +1,5 @@
 from . import pianoroll
 
-__all__ = ['pianoroll', ]
+__all__ = [
+    "pianoroll",
+]

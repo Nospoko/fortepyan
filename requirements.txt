@@ -1,5 +1,5 @@
-SQLAlchemy==1.4.45
-psycopg2==2.9.5
 boto3==1.26.32
-pretty-midi==0.2.9
 numpy==1.23.4
+pretty-midi==0.2.9
+psycopg2==2.9.5
+SQLAlchemy==1.4.45
