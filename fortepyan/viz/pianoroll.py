@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+import matplotlib
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
@@ -16,6 +17,25 @@ class PianoRoll:
     highest_pitch: int
     n_seconds: int
     max_value: int
+
+
+def draw_pianoroll_with_velocities(mf: pd.DataFrame, cmap: str = "GnBu"):
+    fig, axes = plt.subplots(
+        nrows=2,
+        ncols=1,
+        figsize=[16, 9],
+        gridspec_kw={
+            "height_ratios": [4, 1],
+            "hspace": 0,
+        },
+    )
+    df = sanitize_midi_frame(mf)
+    draw_piano_roll(ax=axes[0], midi_frame=df, cmap=cmap)
+    draw_velocities(ax=axes[1], midi_frame=df, cmap=cmap)
+
+    sanitize_xticks(axes[1], df)
+
+    return fig
 
 
 def prepare_piano_roll(df: pd.DataFrame, time: float = None) -> PianoRoll:
@@ -79,15 +99,21 @@ def sanitize_midi_frame(mf: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def draw_midi_frame(ax: plt.Axes, midi_frame: pd.DataFrame, time: float = None) -> plt.Axes:
+def draw_piano_roll(
+    ax: plt.Axes,
+    midi_frame: pd.DataFrame,
+    time: float = None,
+    cmap: str = "GnBu",
+) -> plt.Axes:
     """
     Draws a pianoroll onto an ax.
 
     Parameters:
         ax: Matplotlib axis
-        midi_frame: Dataframe with piano key strokes information
+        midi_frame: Dataframe with piano key strokes
         time (Optional[float]): Use for dynamic visualization - will highlight notes
             played at this *time* value
+        cmap (str): colormap recognizable by Matplotlib
 
     Returns:
         ax: Matplotlib axis with pianoroll.
@@ -102,7 +128,7 @@ def draw_midi_frame(ax: plt.Axes, midi_frame: pd.DataFrame, time: float = None) 
         vmax=138,
         origin="lower",
         interpolation="none",
-        cmap="GnBu",
+        cmap=cmap,
     )
 
     # "Octave" mode for y-ticks
@@ -125,13 +151,50 @@ def draw_midi_frame(ax: plt.Axes, midi_frame: pd.DataFrame, time: float = None) 
 
     # Prepare x ticks and labels
     n_ticks = min(30, piano_roll.n_seconds)
-    step = piano_roll.n_seconds * RESOLUTION / n_ticks
+    step = np.ceil(piano_roll.n_seconds / n_ticks) * RESOLUTION
     x_ticks = np.arange(0, step * n_ticks, step)
     x_ticks = np.round(x_ticks)
     labels = [round(xt / RESOLUTION) for xt in x_ticks]
     ax.set_xticks(x_ticks)
     ax.set_xticklabels(labels, rotation=60)
     ax.set_xlabel("Time [s]")
+    ax.set_xlim(0, piano_roll.n_seconds * RESOLUTION)
     ax.grid()
 
     return ax
+
+
+def draw_velocities(ax: plt.Axes, midi_frame: pd.DataFrame, cmap: str = "GnBu") -> plt.Axes:
+    df = sanitize_midi_frame(midi_frame)
+    colormap = matplotlib.cm.get_cmap(cmap)
+    color = colormap(125 / 127)
+
+    ax.plot(df.start, df.velocity, "o", ms=7, color=color)
+    ax.plot(df.start, df.velocity, ".", color="white")
+    ax.vlines(
+        df.start,
+        ymin=0,
+        ymax=df.velocity,
+        lw=2,
+        alpha=0.777,
+        colors=color,
+    )
+    ax.set_ylim(0, 128)
+
+    return ax
+
+
+def sanitize_xticks(ax: plt.Axes, df: pd.DataFrame):
+    # Prepare x ticks and labels
+    n_seconds = np.ceil(df.end.max())
+    n_ticks = min(30, n_seconds)
+    step = np.ceil(n_seconds / n_ticks)
+    x_ticks = np.arange(0, step * n_ticks, step)
+    x_ticks = np.round(x_ticks)
+    labels = [xt for xt in x_ticks]
+
+    ax.set_xticks(x_ticks)
+    ax.set_xticklabels(labels, rotation=60)
+    ax.set_xlabel("Time [s]")
+    ax.set_xlim(0, n_seconds)
+    ax.grid()

@@ -5,9 +5,28 @@ import pandas as pd
 
 
 @dataclass
+class MidiPiece:
+    df: pd.DataFrame
+    sustain: pd.DataFrame
+    source: dict
+
+    def __rich_repr__(self):
+        yield "MidiPiece"
+        yield "notes", self.df.shape
+        yield "sustain", self.sustain.shape
+        yield "minutes", round(self.duration / 60, 2)
+
+    @property
+    def duration(self) -> float:
+        duration = self.df.end.max() - self.df.start.min()
+        return duration
+
+
+@dataclass
 class MidiFile:
     path: str
     df: pd.DataFrame = field(init=False)
+    sustain: pd.DataFrame = field(init=False)
     _midi: pretty_midi.PrettyMIDI = field(init=False, repr=False)
 
     def __rich_repr__(self):
@@ -49,3 +68,29 @@ class MidiFile:
             }
         )
         self.sustain = sf
+
+    def __getitem__(self, index: slice) -> MidiPiece:
+        if not isinstance(index, slice):
+            raise TypeError("You can only get a part of MidiFile that has multiple notes: Index must be a slice")
+
+        part = self.df[index].reset_index(drop=True)
+
+        # +0.2 to make sure we get some sustain data at the end to ring out
+        ids = (self.sustain.time >= part.start.min()) & (self.sustain.time <= part.end.max() + 0.2)
+        sustain_part = self.sustain[ids].reset_index(drop=True)
+
+        first_sound = part.start.min()
+        sustain_part.time -= first_sound
+        part.start -= first_sound
+        part.end -= first_sound
+
+        source = {
+            "type": "MidiFile",
+            "path": self.path,
+            "start": index.start,
+            "finish": index.stop,
+            "start_time": first_sound,
+        }
+        out = MidiPiece(df=part, sustain=sustain_part, source=source)
+
+        return out

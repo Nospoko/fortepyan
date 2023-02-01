@@ -1,4 +1,5 @@
 boto3==1.26.32
+midi2audio==0.1.1
 numpy==1.23.4
 pretty-midi==0.2.9
 psycopg2==2.9.5
