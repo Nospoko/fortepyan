@@ -1,10 +1,10 @@
-import os
 import tempfile
 
 import pretty_midi
 from pydub import AudioSegment
 from midi2audio import FluidSynth
 
+# TODO Upload this someplace
 synth = FluidSynth(sound_font="tmp/GUGSv1.471.sf2")
 
 
@@ -20,13 +20,10 @@ def midi_to_wav(midi: pretty_midi.PrettyMIDI, wavpath: str):
     midi.write(tmp_midi_path)
     synth.midi_to_audio(tmp_midi_path, wavpath)
 
-    os.remove(tmp_midi_path)
-
 
 def midi_to_mp3(midi: pretty_midi.PrettyMIDI, mp3_path: str):
     tmp_wav_path = tempfile.mkstemp(suffix=".wav")[1]
-    midi_to_wav(midi, tmp_wav_path)
+    midi_to_wav(midi=midi, wavpath=tmp_wav_path)
 
+    # Wav to mp3
     AudioSegment.from_wav(tmp_wav_path).export(mp3_path, format="mp3")
-
-    os.remove(tmp_wav_path)
