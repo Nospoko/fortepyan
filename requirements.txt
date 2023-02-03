@@ -3,4 +3,5 @@ midi2audio==0.1.1
 numpy==1.23.4
 pretty-midi==0.2.9
 psycopg2==2.9.5
+pydub==0.25.1
 SQLAlchemy==1.4.45
