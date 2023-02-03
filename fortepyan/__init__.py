@@ -1,9 +1,9 @@
 import pretty_midi
 
 from .viz import pianoroll as roll
-from .midi.structures import MidiFile
+from .midi.structures import MidiFile, MidiPiece
 
-__all__ = ["roll", "MidiFile"]
+__all__ = ["roll", "MidiFile", "MidiPiece"]
 
 # Pretty MIDI will throw an unwanted error for large files with high PPQ
 # This is a workaround

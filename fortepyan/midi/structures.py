@@ -16,10 +16,54 @@ class MidiPiece:
         yield "sustain", self.sustain.shape
         yield "minutes", round(self.duration / 60, 2)
 
+    def __getitem__(self, index: slice) -> "MidiPiece":
+        if not isinstance(index, slice):
+            raise TypeError("You can only get a part of MidiFile that has multiple notes: Index must be a slice")
+
+        part = self.df[index].reset_index(drop=True)
+
+        # +0.2 to make sure we get some sustain data at the end to ring out
+        ids = (self.sustain.time >= part.start.min()) & (self.sustain.time <= part.end.max() + 0.2)
+        sustain_part = self.sustain[ids].reset_index(drop=True)
+
+        first_sound = part.start.min()
+        sustain_part.time -= first_sound
+        part.start -= first_sound
+        part.end -= first_sound
+
+        # Make sure the piece can always be track back to the original file exactly
+        out_source = self.source
+        out_source["start"] = self.source.get("start", 0) + index.start
+        out_source["finish"] = self.source.get("finish", 0) + index.stop
+        out_source["start_time"] = self.source.get("start_time", 0) + first_sound
+        out = MidiPiece(df=part, sustain=sustain_part, source=out_source)
+
+        return out
+
     @property
     def duration(self) -> float:
         duration = self.df.end.max() - self.df.start.min()
         return duration
+
+    def to_midi(self, track_name: str = "piano"):
+        track = pretty_midi.PrettyMIDI()
+        piano = pretty_midi.Instrument(program=0, name=track_name)
+
+        for it, row in self.df.iterrows():
+            note = pretty_midi.Note(
+                velocity=int(row.velocity),
+                pitch=int(row.pitch),
+                start=row.start,
+                end=row.end,
+            )
+            piano.notes.append(note)
+
+        cc = [pretty_midi.ControlChange(64, int(r.value), r.time) for _, r in self.sustain.iterrows()]
+        piano.control_changes = cc
+
+        track.instruments.append(piano)
+
+        return track
 
 
 @dataclass
@@ -70,6 +114,7 @@ class MidiFile:
         self.sustain = sf
 
     def __getitem__(self, index: slice) -> MidiPiece:
+        return self.piece[index]
         if not isinstance(index, slice):
             raise TypeError("You can only get a part of MidiFile that has multiple notes: Index must be a slice")
 
@@ -87,10 +132,20 @@ class MidiFile:
         source = {
             "type": "MidiFile",
             "path": self.path,
-            "start": index.start,
-            "finish": index.stop,
-            "start_time": first_sound,
         }
         out = MidiPiece(df=part, sustain=sustain_part, source=source)
 
+        return out
+
+    @property
+    def piece(self) -> MidiPiece:
+        source = {
+            "type": "MidiFile",
+            "path": self.path,
+        }
+        out = MidiPiece(
+            df=self.df,
+            sustain=self.sustain,
+            source=source,
+        )
         return out
