@@ -4,11 +4,11 @@ import pretty_midi
 from pydub import AudioSegment
 from midi2audio import FluidSynth
 
-# TODO Upload this someplace
-synth = FluidSynth(sound_font="tmp/GUGSv1.471.sf2")
+from . import soundfont
 
 
 def midi_to_wav(midi: pretty_midi.PrettyMIDI, wavpath: str):
+    # This will be deleted
     tmp_midi_path = tempfile.mkstemp(suffix=".mid")[1]
 
     # Add an silent event to make sure the final notes
@@ -18,12 +18,17 @@ def midi_to_wav(midi: pretty_midi.PrettyMIDI, wavpath: str):
     midi.instruments[0].control_changes.append(pedal_off)
 
     midi.write(tmp_midi_path)
+
+    sound_font_path = soundfont.download_if_needed()
+    synth = FluidSynth(sound_font=sound_font_path)
     synth.midi_to_audio(tmp_midi_path, wavpath)
 
 
 def midi_to_mp3(midi: pretty_midi.PrettyMIDI, mp3_path: str):
+    # This will be deleted
     tmp_wav_path = tempfile.mkstemp(suffix=".wav")[1]
     midi_to_wav(midi=midi, wavpath=tmp_wav_path)
 
     # Wav to mp3
+    print("Rendering audio to file:", mp3_path)
     AudioSegment.from_wav(tmp_wav_path).export(mp3_path, format="mp3")
