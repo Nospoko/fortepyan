@@ -161,6 +161,9 @@ def draw_piano_roll(
     ax.set_xlim(0, piano_roll.n_seconds * RESOLUTION)
     ax.grid()
 
+    # Vertical position indicator
+    ax.axvline(time * RESOLUTION, color="k", lw=0.5)
+
     return ax
 
 

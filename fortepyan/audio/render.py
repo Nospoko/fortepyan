@@ -24,11 +24,15 @@ def midi_to_wav(midi: pretty_midi.PrettyMIDI, wavpath: str):
     synth.midi_to_audio(tmp_midi_path, wavpath)
 
 
-def midi_to_mp3(midi: pretty_midi.PrettyMIDI, mp3_path: str):
+def midi_to_mp3(midi: pretty_midi.PrettyMIDI, mp3_path: str = None):
     # This will be deleted
     tmp_wav_path = tempfile.mkstemp(suffix=".wav")[1]
     midi_to_wav(midi=midi, wavpath=tmp_wav_path)
 
     # Wav to mp3
+    if not mp3_path:
+        mp3_path = tempfile.mkstemp(suffix=".mp3")[1]
     print("Rendering audio to file:", mp3_path)
     AudioSegment.from_wav(tmp_wav_path).export(mp3_path, format="mp3")
+
+    return mp3_path
