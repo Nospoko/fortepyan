@@ -10,7 +10,7 @@ from .. import MidiPiece, roll
 
 
 class PianoRollScene:
-    def __init__(self, piece: MidiPiece, title: str):
+    def __init__(self, piece: MidiPiece, title: str, cmap: str = "GnBu"):
         self.axes = []
         self.content_dir = Path(tempfile.mkdtemp())
 
@@ -18,12 +18,12 @@ class PianoRollScene:
 
         self.piece = piece
         self.title = title
-        self.cmap = "GnBu"
+        self.cmap = cmap
 
         f, axes = plt.subplots(
             nrows=2,
             ncols=1,
-            figsize=[14, 7],
+            figsize=[16, 9],
             gridspec_kw={
                 "height_ratios": [4, 1],
                 "hspace": 0,
@@ -48,6 +48,7 @@ class PianoRollScene:
             cmap=self.cmap,
             time=time,
         )
+        self.roll_ax.set_title(self.title)
 
     def draw_velocities(self, time: float) -> None:
         roll.draw_velocities(
@@ -80,8 +81,6 @@ class PianoRollScene:
         return self.content_dir
 
     def animate_part(self, part: pd.DataFrame):
-        print("Will animate frames:", part.shape[0])
-
         for it, row in part.iterrows():
             time = row.time
             frame_counter = int(row.counter)

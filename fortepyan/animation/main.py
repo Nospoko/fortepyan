@@ -4,8 +4,13 @@ from .. import MidiPiece, midi_to_mp3
 from . import pianoroll as pianoroll_animation
 
 
-def make_video(piece: MidiPiece, movie_path: str, title: str = "animation"):
-    scene = pianoroll_animation.PianoRollScene(piece, title=title)
+def make_video(
+    piece: MidiPiece,
+    movie_path: str,
+    title: str = "animation",
+    cmap: str = "GnBu",
+):
+    scene = pianoroll_animation.PianoRollScene(piece, title=title, cmap=cmap)
     mp3_path = midi_to_mp3(piece.to_midi())
 
     scene_frames_dir = scene.render_mp()
