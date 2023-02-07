@@ -48,7 +48,7 @@ class PianoRollScene:
             cmap=self.cmap,
             time=time,
         )
-        self.roll_ax.set_title(self.title)
+        self.roll_ax.set_title(self.title, fontsize=20)
 
     def draw_velocities(self, time: float) -> None:
         roll.draw_velocities(
@@ -68,18 +68,6 @@ class PianoRollScene:
         for ax in self.axes:
             ax.clear()
 
-    def render(self, framerate: int = 30) -> None:
-        max_time = np.ceil(self.piece.df.end.max()).astype(int)
-
-        n_frames = max_time * framerate
-        times = np.linspace(0, max_time - 1 / framerate, n_frames)
-        df = pd.DataFrame({"time": times, "counter": range(n_frames)})
-
-        # One big part
-        self.animate_part(df)
-
-        return self.content_dir
-
     def animate_part(self, part: pd.DataFrame):
         for it, row in part.iterrows():
             time = row.time
@@ -94,15 +82,61 @@ class PianoRollScene:
         self.figure.tight_layout()
         self.draw_all_axes(time)
 
-    def render_mp(self, framerate: int = 30) -> None:
-        max_time = np.ceil(self.piece.df.end.max()).astype(int)
+    def prepare_animation_steps(self, framerate: int = 30) -> pd.DataFrame:
+        """
+        Prepare the data required for the animation.
 
+        Parameters:
+            framerate (int): Framerate for the animation (default is 30).
+
+        Returns:
+            pd.DataFrame: DataFrame containing time and counter for each frame.
+        """
+        # Calculate the maximum time required for the animation
+        max_time = np.ceil(self.piece.df.end.max()).astype(int)
+        # Calculate the number of frames required for the animation
         n_frames = max_time * framerate
+        # Create an array of times that will be used to create the animation
         times = np.linspace(0, max_time - 1 / framerate, n_frames)
+        # Create a DataFrame to store the time and counter for each frame
         df = pd.DataFrame({"time": times, "counter": range(n_frames)})
+
+        return df
+
+    def render(self, framerate: int = 30) -> None:
+        """
+        Render the animation using a single process.
+
+        Parameters:
+            framerate (int): Framerate for the animation (default is 30).
+        """
+        df = self.prepare_animation_steps(framerate)
+
+        # Call the animate_part function with the entire DataFrame as an argument
+        self.animate_part(df)
+
+        # Return the directory containing the generated animation content
+        return self.content_dir
+
+    def render_mp(self, framerate: int = 30) -> None:
+        """
+        Render the animation using multi-processing to speed up the process.
+
+        Parameters:
+            framerate (int): Framerate for the animation (default is 30).
+        """
+        df = self.prepare_animation_steps(framerate)
+
+        # Step size for dividing the DataFrame into parts
         step = 50
-        parts = [df[sta : sta + step] for sta in range(0, n_frames, step)]
+
+        # Divide the DataFrame into parts based on the step size
+        parts = [df[sta : sta + step] for sta in range(0, df.shape[0], step)]
+
+        # Create a pool of processes using all available CPU cores
         with mp.Pool(mp.cpu_count()) as pool:
+            # Map the animate_part function to each part of the DataFrame
             pool.map(self.animate_part, parts)
 
+        # Return the directory containing the generated animation content
         return self.content_dir

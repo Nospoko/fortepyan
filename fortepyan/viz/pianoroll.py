@@ -102,7 +102,7 @@ def sanitize_midi_frame(mf: pd.DataFrame) -> pd.DataFrame:
 def draw_piano_roll(
     ax: plt.Axes,
     midi_frame: pd.DataFrame,
-    time: float = None,
+    time: float = 0.0,
     cmap: str = "GnBu",
 ) -> plt.Axes:
     """
