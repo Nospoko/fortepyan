@@ -38,12 +38,12 @@ class PianoRollScene:
     def draw_all_axes(self, time: float) -> None:
         self.draw_piano_roll(time)
         self.draw_velocities(time)
-        roll.sanitize_xticks(self.velocity_ax, self.piece.df)
+        roll.sanitize_xticks(self.velocity_ax, self.piece)
 
     def draw_piano_roll(self, time: float) -> None:
         roll.draw_piano_roll(
             ax=self.roll_ax,
-            midi_frame=self.piece.df,
+            midi_piece=self.piece,
             cmap=self.cmap,
             time=time,
         )
@@ -52,7 +52,7 @@ class PianoRollScene:
     def draw_velocities(self, time: float) -> None:
         roll.draw_velocities(
             ax=self.velocity_ax,
-            midi_frame=self.piece.df,
+            midi_piece=self.piece,
             cmap=self.cmap,
         )
 

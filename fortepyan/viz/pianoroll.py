@@ -6,6 +6,8 @@ import pandas as pd
 from matplotlib import pyplot as plt
 from pretty_midi import note_number_to_name
 
+from .. import MidiPiece
+
 # These could be properties of the PianoRoll only
 # not global configs
 N_PITCHES = 128
@@ -21,7 +23,7 @@ class PianoRoll:
     max_value: int
 
 
-def draw_pianoroll_with_velocities(mf: pd.DataFrame, cmap: str = "GnBu"):
+def draw_pianoroll_with_velocities(midi_piece: MidiPiece, cmap: str = "GnBu"):
     fig, axes = plt.subplots(
         nrows=2,
         ncols=1,
@@ -31,11 +33,11 @@ def draw_pianoroll_with_velocities(mf: pd.DataFrame, cmap: str = "GnBu"):
             "hspace": 0,
         },
     )
-    df = sanitize_midi_frame(mf)
-    draw_piano_roll(ax=axes[0], midi_frame=df, cmap=cmap)
-    draw_velocities(ax=axes[1], midi_frame=df, cmap=cmap)
+    piece = sanitize_midi_piece(midi_piece)
+    draw_piano_roll(ax=axes[0], midi_piece=piece, cmap=cmap)
+    draw_velocities(ax=axes[1], midi_piece=piece, cmap=cmap)
 
-    sanitize_xticks(axes[1], df)
+    sanitize_xticks(axes[1], piece)
 
     return fig
 
@@ -81,6 +83,17 @@ def prepare_piano_roll(df: pd.DataFrame, time: float = None) -> PianoRoll:
     return pianoroll
 
 
+def sanitize_midi_piece(piece: MidiPiece) -> MidiPiece:
+    # 20 minutes?
+    duration_threshold = 1200
+    if piece.duration > duration_threshold:
+        # TODO Logger
+        print("Warning: playtime to long! Showing after trim")
+        piece = piece.trim(0, duration_threshold)
+
+    return piece
+
+
 def sanitize_midi_frame(mf: pd.DataFrame) -> pd.DataFrame:
     # Do not modify input data
     df = mf.copy()
@@ -103,7 +116,7 @@ def sanitize_midi_frame(mf: pd.DataFrame) -> pd.DataFrame:
 
 def draw_piano_roll(
     ax: plt.Axes,
-    midi_frame: pd.DataFrame,
+    midi_piece: MidiPiece,
     time: float = 0.0,
     cmap: str = "GnBu",
 ) -> plt.Axes:
@@ -112,7 +125,7 @@ def draw_piano_roll(
 
     Parameters:
         ax: Matplotlib axis
-        midi_frame: Dataframe with piano key strokes
+        midi_piece: MidiPiece with piano performance
         time (Optional[float]): Use for dynamic visualization - will highlight notes
             played at this *time* value
         cmap (str): colormap recognizable by Matplotlib
@@ -120,8 +133,8 @@ def draw_piano_roll(
     Returns:
         ax: Matplotlib axis with pianoroll.
     """
-    df = sanitize_midi_frame(midi_frame)
-    piano_roll = prepare_piano_roll(df, time=time)
+    piece = sanitize_midi_piece(midi_piece)
+    piano_roll = prepare_piano_roll(piece.df, time=time)
 
     ax.imshow(
         piano_roll.roll,
@@ -144,7 +157,7 @@ def draw_piano_roll(
     # (each note is 1-width and ticks by default are centered, ergo: 0.5 shift)
     y_ticks -= 0.5
     ax.set_yticks(y_ticks)
-    ax.set_yticklabels(pitch_labels)
+    ax.set_yticklabels(pitch_labels, fontsize=15)
 
     # Show keyboard range where the music is
     y_min = piano_roll.lowest_pitch - 1
@@ -169,8 +182,9 @@ def draw_piano_roll(
     return ax
 
 
-def draw_velocities(ax: plt.Axes, midi_frame: pd.DataFrame, cmap: str = "GnBu") -> plt.Axes:
-    df = sanitize_midi_frame(midi_frame)
+def draw_velocities(ax: plt.Axes, midi_piece: MidiPiece, cmap: str = "GnBu") -> plt.Axes:
+    piece = sanitize_midi_piece(midi_piece)
+    df = piece.df
     colormap = matplotlib.cm.get_cmap(cmap)
     color = colormap(125 / 127)
 
@@ -189,17 +203,35 @@ def draw_velocities(ax: plt.Axes, midi_frame: pd.DataFrame, cmap: str = "GnBu") 
     return ax
 
 
-def sanitize_xticks(ax: plt.Axes, df: pd.DataFrame):
-    # Prepare x ticks and labels
-    n_seconds = np.ceil(df.end.max())
+def sanitize_xticks(ax: plt.Axes, piece: MidiPiece):
+    """Sanitize the x-axis of a Matplotlib plot for easier readability.
+
+    This function takes two parameters, `ax` and `piece`, which represent the Matplotlib axes object and the midi piece
+    that the plot is based on, respectively. The function sets the x-axis tick positions, labels, and limits,
+    and adds a grid to the plot to make it easier to read.
+
+    Args:
+    - ax (plt.Axes): Matplotlib axes object
+    - piece (MidiPiece): `MidiPiece` object used to create the plot
+    """
+    # Calculate the number of seconds in the plot
+    n_seconds = np.ceil(piece.duration)
+    # Set the maximum number of x-axis ticks to 30
     n_ticks = min(30, n_seconds)
+    # Calculate the step size for the x-axis tick positions
     step = np.ceil(n_seconds / n_ticks)
+    # Calculate the x-axis tick positions
     x_ticks = np.arange(0, step * n_ticks, step)
+    # Round the x-axis tick positions to the nearest integer
     x_ticks = np.round(x_ticks)
+    # Set the x-axis tick labels to the same values as the tick positions
     labels = [xt for xt in x_ticks]
 
+    # Set the x-axis tick positions and labels, and add a label to the x-axis
     ax.set_xticks(x_ticks)
-    ax.set_xticklabels(labels, rotation=60)
+    ax.set_xticklabels(labels, rotation=60, fontsize=15)
     ax.set_xlabel("Time [s]")
+    # Set the x-axis limits to the range of the data
     ax.set_xlim(0, n_seconds)
+    # Add a grid to the plot
     ax.grid()
