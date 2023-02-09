@@ -1,5 +1,6 @@
 from dataclasses import field, dataclass
 
+import numpy as np
 import pretty_midi
 import pandas as pd
 
@@ -16,10 +17,49 @@ class MidiPiece:
         yield "sustain", self.sustain.shape
         yield "minutes", round(self.duration / 60, 2)
 
-    def __getitem__(self, index: slice) -> "MidiPiece":
+    @property
+    def size(self) -> int:
+        return self.df.shape[0]
+
+    def trim(self, start: float, finish: float) -> "MidiPiece":
+        """Trim the MidiPiece object between the specified start and finish time.
+
+        This function takes two parameters, `start` and `finish`, which represent the start and end time in seconds,
+        and returns a new MidiPiece object that contains only the notes within the specified time range.
+
+        Args:
+        - start (float): start time in seconds
+        - finish (float): end time in seconds
+
+        Returns:
+        - MidiPiece: the trimmed MidiPiece object
+        """
+        # Filter the rows in the data frame that are within the specified start and end time
+        ids = (self.df.start >= start) & (self.df.end <= finish)
+        # Get the indices of the rows that meet the criteria
+        idxs = np.where(ids)[0]
+        # Get the start and end indices for the new MidiPiece object
+        start = idxs[0]
+        finish = idxs[-1] + 1
+        # Slice the original MidiPiece object to create the trimmed MidiPiece object
+        out = self[start:finish]
+        # Return the trimmed MidiPiece object
+        return out
+
+    def __sanitize_get_index(self, index: slice) -> slice:
         if not isinstance(index, slice):
             raise TypeError("You can only get a part of MidiFile that has multiple notes: Index must be a slice")
 
+        if not index.start:
+            index = slice(0, index.stop)
+
+        if not index.stop:
+            index = slice(index.start, self.size)
+
+        return index
+
+    def __getitem__(self, index: slice) -> "MidiPiece":
+        index = self.__sanitize_get_index(index)
         part = self.df[index].reset_index(drop=True)
 
         # +0.2 to make sure we get some sustain data at the end to ring out

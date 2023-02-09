@@ -27,7 +27,6 @@ class PianoRollScene:
             gridspec_kw={
                 "height_ratios": [4, 1],
                 "hspace": 0,
-                # 'wspace': 0
             },
         )
 

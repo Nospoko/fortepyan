@@ -6,6 +6,8 @@ import pandas as pd
 from matplotlib import pyplot as plt
 from pretty_midi import note_number_to_name
 
+# These could be properties of the PianoRoll only
+# not global configs
 N_PITCHES = 128
 RESOLUTION = 30
 
