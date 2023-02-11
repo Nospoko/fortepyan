@@ -6,7 +6,8 @@ import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 
-from .. import MidiPiece, roll
+from fortepyan.viz import pianoroll as roll
+from fortepyan.midi.structures import MidiPiece
 
 
 class PianoRollScene:

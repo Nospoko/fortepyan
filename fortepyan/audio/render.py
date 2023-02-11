@@ -4,7 +4,7 @@ import pretty_midi
 from pydub import AudioSegment
 from midi2audio import FluidSynth
 
-from . import soundfont
+from fortepyan.audio import soundfont
 
 
 def midi_to_wav(midi: pretty_midi.PrettyMIDI, wavpath: str):
