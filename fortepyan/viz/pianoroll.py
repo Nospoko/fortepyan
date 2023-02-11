@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import field, dataclass
 
 import matplotlib
 import numpy as np
@@ -19,8 +19,33 @@ class PianoRoll:
     roll: np.array
     lowest_pitch: int
     highest_pitch: int
-    n_seconds: int
+    duration: float
     max_value: int
+
+    # Plot elements
+    y_ticks: np.array = field(init=False)
+    pitch_labels: list[str] = field(init=False)
+    x_ticks: np.array = field(init=False)
+    x_labels: list[str] = field(init=False)
+
+    def __post_init__(self):
+        # "Octave" mode for y-ticks
+        self.y_ticks = np.arange(0, 128, 12, dtype=float)
+
+        # Adding new line shifts the label up a little and positions
+        # it nicely at the height where the note actually is
+        self.pitch_labels = [f"{note_number_to_name(it)}\n" for it in self.y_ticks]
+
+        # Move the ticks to land between the notes
+        # (each note is 1-width and ticks by default are centered, ergo: 0.5 shift)
+        self.y_ticks -= 0.5
+
+        # Prepare x ticks and labels
+        n_ticks = min(30, self.duration)
+        step = np.ceil(self.duration / n_ticks) * RESOLUTION
+        x_ticks = np.arange(0, step * n_ticks, step)
+        self.x_ticks = np.round(x_ticks)
+        self.x_labels = [round(xt / RESOLUTION) for xt in self.x_ticks]
 
 
 def draw_pianoroll_with_velocities(midi_piece: MidiPiece, cmap: str = "GnBu"):
@@ -42,9 +67,22 @@ def draw_pianoroll_with_velocities(midi_piece: MidiPiece, cmap: str = "GnBu"):
     return fig
 
 
-def prepare_piano_roll(df: pd.DataFrame, time: float = None) -> PianoRoll:
-    n_seconds = np.ceil(df.end.max())
-    n_time_steps = RESOLUTION * int(n_seconds)
+def prepare_piano_roll(
+    df: pd.DataFrame,
+    time_indicator: float = None,
+    time_start: float = 0,
+    time_end: float = None,
+) -> PianoRoll:
+    if not time_end:
+        # We don't really need a full second roundup
+        time_end = np.ceil(df.end.max())
+
+    if time_end <= df.end.max():
+        print("Warning, piano roll is not showing everythin!")
+
+    # duration = time_end - time_start
+    duration = time_end
+    n_time_steps = RESOLUTION * int(duration)
     pianoroll = np.zeros((N_PITCHES, n_time_steps), np.uint8)
 
     # Adjust velocity color intensity to be sure it's visible
@@ -59,24 +97,23 @@ def prepare_piano_roll(df: pd.DataFrame, time: float = None) -> PianoRoll:
         note_end = np.round(note_end).astype(int)
         pitch_idx = int(row.pitch)
 
-        if time and note_on <= time * RESOLUTION < note_end:
-            color_value = 160
+        if time_indicator and note_on <= time_indicator * RESOLUTION < note_end:
+            color_value = max_value
         else:
             color_value = min_value + row.velocity
         pianoroll[pitch_idx, note_on:note_end] = color_value
 
+    # Could be a part of "prepare empty piano roll"
     for it in range(N_PITCHES):
         is_black = it % 12 in [1, 3, 6, 8, 10]
         if is_black:
             pianoroll[it, :] += min_value
 
-    lowest_pitch = df.pitch.min()
-    highest_pitch = df.pitch.max()
     pianoroll = PianoRoll(
         roll=pianoroll,
-        lowest_pitch=lowest_pitch,
-        highest_pitch=highest_pitch,
-        n_seconds=n_seconds,
+        lowest_pitch=df.pitch.min(),
+        highest_pitch=df.pitch.max(),
+        duration=duration,
         max_value=max_value,
     )
 
@@ -134,7 +171,7 @@ def draw_piano_roll(
         ax: Matplotlib axis with pianoroll.
     """
     piece = sanitize_midi_piece(midi_piece)
-    piano_roll = prepare_piano_roll(piece.df, time=time)
+    piano_roll = prepare_piano_roll(piece.df, time_indicator=time)
 
     ax.imshow(
         piano_roll.roll,
@@ -146,34 +183,18 @@ def draw_piano_roll(
         cmap=cmap,
     )
 
-    # "Octave" mode for y-ticks
-    y_ticks = np.arange(0, 128, 12, dtype=float)
-
-    # Adding new line shifts the label up a little and positions
-    # it nicely at the height where the note actually is
-    pitch_labels = [f"{note_number_to_name(it)}\n" for it in y_ticks]
-
-    # Move the ticks to land between the notes
-    # (each note is 1-width and ticks by default are centered, ergo: 0.5 shift)
-    y_ticks -= 0.5
-    ax.set_yticks(y_ticks)
-    ax.set_yticklabels(pitch_labels, fontsize=15)
+    ax.set_yticks(piano_roll.y_ticks)
+    ax.set_yticklabels(piano_roll.pitch_labels, fontsize=15)
 
     # Show keyboard range where the music is
     y_min = piano_roll.lowest_pitch - 1
     y_max = piano_roll.highest_pitch + 1
     ax.set_ylim(y_min, y_max)
 
-    # Prepare x ticks and labels
-    n_ticks = min(30, piano_roll.n_seconds)
-    step = np.ceil(piano_roll.n_seconds / n_ticks) * RESOLUTION
-    x_ticks = np.arange(0, step * n_ticks, step)
-    x_ticks = np.round(x_ticks)
-    labels = [round(xt / RESOLUTION) for xt in x_ticks]
-    ax.set_xticks(x_ticks)
-    ax.set_xticklabels(labels, rotation=60)
+    ax.set_xticks(piano_roll.x_ticks)
+    ax.set_xticklabels(piano_roll.x_labels, rotation=60)
     ax.set_xlabel("Time [s]")
-    ax.set_xlim(0, piano_roll.n_seconds * RESOLUTION)
+    ax.set_xlim(0, piano_roll.duration * RESOLUTION)
     ax.grid()
 
     # Vertical position indicator

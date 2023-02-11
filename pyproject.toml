@@ -1,0 +1,36 @@
+# pyproject.toml
+
+[build-system]
+requires = ["setuptools>=61.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fortepyan"
+version = "0.1.0"
+description = "Process MIDI piano with (almost) no pain"
+readme = "README.md"
+authors = [{ name = "Piano For AI", email = "roszcz+fortepyan@gmail.com" }]
+license = { file = "LICENSE" }
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+]
+keywords = ["midi", "music", "piano"]
+dependencies = [
+    "appdirs>=1.4.4",
+    "boto3>=1.26.32",
+    "midi2audio>=0.1.1",
+    "numpy>=1.23.4",
+    "pretty-midi>=0.2.9",
+    "psycopg2>=2.9.5",
+    "pydub>=0.25.1",
+    "SQLAlchemy>=1.4.45",
+]
+requires-python = ">=3.9"
+
+[project.urls]
+Homepage = "https://github.com/Nospoko/fortepyan"
+
+[tool.setuptools]
+packages = ["fortepyan"]
