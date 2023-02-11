@@ -1,3 +1,5 @@
 .plan
 .env
 tmp/
+*.egg-info/
+dist/

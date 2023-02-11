@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "fortepyan"
-version = "0.1.0"
+version = "0.1.5"
 description = "Process MIDI piano with (almost) no pain"
 readme = "README.md"
 authors = [{ name = "Piano For AI", email = "roszcz+fortepyan@gmail.com" }]
@@ -19,12 +19,12 @@ classifiers = [
 keywords = ["midi", "music", "piano"]
 dependencies = [
     "appdirs>=1.4.4",
-    "boto3>=1.26.32",
+    "boto3",
     "midi2audio>=0.1.1",
     "numpy>=1.23.4",
     "pretty-midi>=0.2.9",
     "psycopg2>=2.9.5",
-    "pydub>=0.25.1",
+    "pydub>=0.25",
     "SQLAlchemy>=1.4.45",
 ]
 requires-python = ">=3.9"
@@ -33,4 +33,20 @@ requires-python = ">=3.9"
 Homepage = "https://github.com/Nospoko/fortepyan"
 
 [tool.setuptools]
-packages = ["fortepyan"]
+packages = ["fortepyan", "fortepyan.viz", "fortepyan.midi", "fortepyan.audio", "fortepyan.animation"]
+
+[tool.bumpver]
+current_version = "0.1.5"
+version_pattern = "MAJOR.MINOR.PATCH"
+commit_message = "bump version {old_version} -> {new_version}"
+commit = true
+tag = true
+push = true
+
+[tool.bumpver.file_patterns]
+"pyproject.toml" = [
+    'current_version = "{version}"',
+]
+"fortepyan/__init__.py" = [
+    '__version__ = "{version}"',
+]

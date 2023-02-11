@@ -6,7 +6,7 @@ import pandas as pd
 from matplotlib import pyplot as plt
 from pretty_midi import note_number_to_name
 
-from .. import MidiPiece
+from fortepyan.midi.structures import MidiPiece
 
 # These could be properties of the PianoRoll only
 # not global configs
