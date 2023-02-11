@@ -17,3 +17,12 @@ To run the hooks against all files without running `git commit`:
 ```sh
 pre-commit run --all-files
 ```
+
+Package release:
+```sh
+# use patch/minor/major
+bumpver update --patch
+
+python -m build
+twine upload -r pypi dist/*
+```
