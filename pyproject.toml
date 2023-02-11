@@ -36,7 +36,7 @@ Homepage = "https://github.com/Nospoko/fortepyan"
 packages = ["fortepyan", "fortepyan.viz", "fortepyan.midi", "fortepyan.audio", "fortepyan.animation"]
 
 [tool.bumpver]
-current_version = "0.1.5"
+current_version = "0.1.6"
 version_pattern = "MAJOR.MINOR.PATCH"
 commit_message = "bump version {old_version} -> {new_version}"
 commit = true
