@@ -7,6 +7,7 @@ import pandas as pd
 from matplotlib import pyplot as plt
 
 from fortepyan.viz import pianoroll as roll
+from fortepyan.viz.structures import PianoRoll
 from fortepyan.midi.structures import MidiPiece
 
 
@@ -39,21 +40,22 @@ class PianoRollScene:
     def draw_all_axes(self, time: float) -> None:
         self.draw_piano_roll(time)
         self.draw_velocities(time)
-        roll.sanitize_xticks(self.velocity_ax, self.piece)
 
     def draw_piano_roll(self, time: float) -> None:
+        piano_roll = PianoRoll(self.piece, current_time=time)
         roll.draw_piano_roll(
             ax=self.roll_ax,
-            midi_piece=self.piece,
+            piano_roll=piano_roll,
             cmap=self.cmap,
             time=time,
         )
         self.roll_ax.set_title(self.title, fontsize=20)
 
     def draw_velocities(self, time: float) -> None:
+        piano_roll = PianoRoll(self.piece)
         roll.draw_velocities(
             ax=self.velocity_ax,
-            midi_piece=self.piece,
+            piano_roll=piano_roll,
             cmap=self.cmap,
         )
 

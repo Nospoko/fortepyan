@@ -21,6 +21,10 @@ class MidiPiece:
     def size(self) -> int:
         return self.df.shape[0]
 
+    def time_shift(self, shift_s: float):
+        self.df.start += shift_s
+        self.df.end += shift_s
+
     def trim(self, start: float, finish: float) -> "MidiPiece":
         """Trim the MidiPiece object between the specified start and finish time.
 
@@ -50,9 +54,11 @@ class MidiPiece:
         if not isinstance(index, slice):
             raise TypeError("You can only get a part of MidiFile that has multiple notes: Index must be a slice")
 
+        # If you wan piece[:stop]
         if not index.start:
             index = slice(0, index.stop)
 
+        # If you want piece[start:]
         if not index.stop:
             index = slice(index.start, self.size)
 
