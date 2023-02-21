@@ -36,7 +36,7 @@ class PianoRoll:
             # We don't really need a full second roundup
             self.time_end = np.ceil(df.end.max())
 
-        if self.time_end <= df.end.max():
+        if self.time_end < df.end.max():
             print("Warning, piano roll is not showing everything!")
 
         # duration = time_end - time_start

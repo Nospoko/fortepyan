@@ -9,6 +9,7 @@ from fortepyan.midi.structures import MidiPiece
 
 def draw_pianoroll_with_velocities(
     midi_piece: MidiPiece,
+    time_end: float = None,
     title: str = None,
     cmap: str = "GnBu",
 ):
@@ -22,7 +23,7 @@ def draw_pianoroll_with_velocities(
         },
     )
     piece = sanitize_midi_piece(midi_piece)
-    piano_roll = PianoRoll(piece)
+    piano_roll = PianoRoll(piece, time_end=time_end)
     draw_piano_roll(ax=axes[0], piano_roll=piano_roll, cmap=cmap)
     draw_velocities(ax=axes[1], piano_roll=piano_roll, cmap=cmap)
 
