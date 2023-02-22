@@ -59,17 +59,18 @@ def merge_diffused_pieces(pieces: list[MidiPiece]) -> MidiPiece:
     start = 0
     finish = time_per_step
     for piece in pieces:
+        # Take note start and volume
         start_ids = (piece.df.start >= start) & (piece.df.start < finish)
-        end_ids = (piece.df.end >= start) & (piece.df.end < finish)
-
         update_start_ids = start_ids & (~df.started)
         df.loc[update_start_ids, "start"] = piece.df[update_start_ids].start
         df.loc[update_start_ids, "velocity"] = piece.df[update_start_ids].velocity
         df.loc[update_start_ids, "started"] = True
 
-        update_end_ids = end_ids
+        # Take note end
+        update_end_ids = (piece.df.end >= start) & (piece.df.end < finish)
         df.loc[update_end_ids, "end"] = piece.df[update_end_ids].end
 
+        # Go to next diffusion step
         start += time_per_step
         finish += time_per_step
 

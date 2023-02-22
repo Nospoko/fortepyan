@@ -9,7 +9,7 @@ import pandas as pd
 class MidiPiece:
     df: pd.DataFrame
     sustain: pd.DataFrame
-    source: dict
+    source: dict = None
 
     def __rich_repr__(self):
         yield "MidiPiece"
