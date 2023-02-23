@@ -134,7 +134,13 @@ class MutePianoRollEvolution:
 
 
 class EvolvingPianoRollScene:
-    def __init__(self, pieces: list[MidiPiece], title: str, cmap: str = "GnBu"):
+    def __init__(
+        self,
+        pieces: list[MidiPiece],
+        title_format: str = "{}",
+        title_key: str = None,
+        cmap: str = "GnBu",
+    ):
         self.axes = []
         self.content_dir = Path(tempfile.mkdtemp())
 
@@ -145,8 +151,9 @@ class EvolvingPianoRollScene:
         self.duration = max([piece.df.end.max() for piece in pieces])
         self.time_per_step = self.duration / n_steps
 
-        self.title = title
         self.cmap = cmap
+        self.title_key = title_key
+        self.title_format = title_format
 
         f, axes = plt.subplots(
             nrows=2,
@@ -173,6 +180,10 @@ class EvolvingPianoRollScene:
             time_end=self.duration,
         )
 
+        title_info = piece.source[self.title_key]
+        title = self.title_format.format(title_info)
+        self.roll_ax.set_title(title, fontsize=20)
+
         self.draw_piano_roll(piano_roll, time)
         self.draw_velocities(piano_roll, time)
 
@@ -183,7 +194,6 @@ class EvolvingPianoRollScene:
             cmap=self.cmap,
             time=time,
         )
-        self.roll_ax.set_title(self.title, fontsize=20)
 
     def draw_velocities(self, piano_roll: PianoRoll, time: float) -> None:
         roll.draw_velocities(
