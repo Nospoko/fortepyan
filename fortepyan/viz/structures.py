@@ -41,7 +41,7 @@ class PianoRoll:
 
         # duration = time_end - time_start
         self.duration = self.time_end
-        n_time_steps = self.RESOLUTION * int(self.duration)
+        n_time_steps = self.RESOLUTION * int(np.ceil(self.duration))
         pianoroll = np.zeros((self.N_PITCHES, n_time_steps), np.uint8)
 
         # Adjust velocity color intensity to be sure it's visible

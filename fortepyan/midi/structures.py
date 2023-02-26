@@ -117,6 +117,7 @@ class MidiFile:
     path: str
     df: pd.DataFrame = field(init=False)
     sustain: pd.DataFrame = field(init=False)
+    control_frame: pd.DataFrame = field(init=False, repr=False)
     _midi: pretty_midi.PrettyMIDI = field(init=False, repr=False)
 
     def __rich_repr__(self):
@@ -132,11 +133,16 @@ class MidiFile:
 
     @property
     def notes(self):
-        return self._midi.instruments[0].notes
+        # This is not great/foolproof, but we already have files
+        # where the piano track is present on multiple "programs"/"instruments
+        notes = sum([inst.notes for inst in self._midi.instruments], [])
+        return notes
 
     @property
     def control_changes(self):
-        return self._midi.instruments[0].control_changes
+        # See the note for notes ^^
+        ccs = sum([inst.control_changes for inst in self._midi.instruments], [])
+        return ccs
 
     def __post_init__(self):
         self._midi = pretty_midi.PrettyMIDI(self.path)
@@ -150,14 +156,17 @@ class MidiFile:
         )
         self.df = df.sort_values("start", ignore_index=True)
 
-        # Sustain CC is 64
-        sf = pd.DataFrame(
+        self.control_frame = pd.DataFrame(
             {
-                "time": [cc.time for cc in self.control_changes if cc.number == 64],
-                "value": [cc.value for cc in self.control_changes if cc.number == 64],
+                "time": [cc.time for cc in self.control_changes],
+                "value": [cc.value for cc in self.control_changes],
+                "number": [cc.number for cc in self.control_changes],
             }
         )
-        self.sustain = sf
+
+        # Sustain CC is 64
+        ids = self.control_frame.number == 64
+        self.sustain = self.control_frame[ids].reset_index(drop=True)
 
     def __getitem__(self, index: slice) -> MidiPiece:
         return self.piece[index]

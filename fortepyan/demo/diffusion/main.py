@@ -12,16 +12,19 @@ def diffuse_midi_piece(midi_piece: MidiPiece) -> list[MidiPiece]:
         return np.random.random(size) - 0.5
 
     n_steps = 100
-    midi_piece.source["diffusion_amplitude"] = 0
+    midi_piece.source["diffusion_t_amplitude"] = 0
+    midi_piece.source["diffusion_v_amplitude"] = 0
     diffused = [midi_piece]
     for it in range(n_steps):
         piece = diffused[-1]
 
         # TODO This is a poor mans linear beta schedule
         amplitude = it / 30
-        s_noise = get_random(piece.size) * 0.01 * amplitude
-        e_noise = get_random(piece.size) * 0.01 * amplitude
-        v_noise = get_random(piece.size) * 2 * amplitude
+        v_amplitude = 8 * amplitude
+        t_amplitude = 0.00 * amplitude
+        s_noise = get_random(piece.size) * t_amplitude
+        e_noise = get_random(piece.size) * t_amplitude
+        v_noise = get_random(piece.size) * v_amplitude
         next_frame = piece.df.copy()
         next_frame.start += s_noise
         next_frame.end += e_noise
@@ -30,9 +33,10 @@ def diffuse_midi_piece(midi_piece: MidiPiece) -> list[MidiPiece]:
 
         # Make a copy of the source info ...
         source = dict(piece.source)
-        # ... and note the diffusion step
+        # ... and note the diffusion info
         source["diffusion_step"] = it
-        source["diffusion_amplitude"] = amplitude
+        source["diffusion_t_amplitude"] = t_amplitude
+        source["diffusion_v_amplitude"] = v_amplitude
         next_piece = MidiPiece(
             df=next_frame,
             sustain=piece.sustain,
@@ -92,17 +96,22 @@ def merge_diffused_pieces(pieces: list[MidiPiece]) -> MidiPiece:
     return new_piece
 
 
-def animate_diffusion(piece: MidiPiece, movie_path: str = "tmp/tmp.mp4"):
+def animate_diffusion(
+    piece: MidiPiece,
+    movie_path: str = "tmp/tmp.mp4",
+    cmap="PuBuGn",
+):
     pieces = diffuse_midi_piece(piece)
 
     # We want to see the reverse diffusion as well
-    pieces = 10 * pieces[:1] + pieces + pieces[::-1] + 10 * pieces[:1]
+    pieces = 20 * pieces[:1] + pieces + pieces[::-1] + 20 * pieces[:1]
     evolved_piece = merge_diffused_pieces(pieces)
 
     scene = evolution_animation.EvolvingPianoRollScene(
         pieces,
         title_format="Diffusion Amplitude: {:.2f}",
-        title_key="diffusion_amplitude",
+        title_key="diffusion_v_amplitude",
+        cmap=cmap,
     )
     scene_frames_dir = scene.render_mp()
 
