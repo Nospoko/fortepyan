@@ -22,8 +22,6 @@ def prepare_records(engine, s3_client) -> list[dict]:
         data = data.sort_values("number_of_notes", ascending=False)
 
         practice_file = data.iloc[0]
-        print(practice_file)
-        print("---" * 10)
         savepath = f"tmp/{practice_file.filename}"
         s3_client.download_file(
             Bucket="piano-for-ai",
