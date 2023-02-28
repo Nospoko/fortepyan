@@ -3,7 +3,7 @@ from pathlib import Path
 
 import appdirs
 
-from .. import config as C
+from fortepyan import config as C
 
 
 def download_if_needed() -> Path:
