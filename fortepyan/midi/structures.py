@@ -4,17 +4,17 @@ import numpy as np
 import pretty_midi
 import pandas as pd
 
+from fortepyan.midi import tools as midi_tools
+
 
 @dataclass
 class MidiPiece:
     df: pd.DataFrame
-    sustain: pd.DataFrame
     source: dict = None
 
     def __rich_repr__(self):
         yield "MidiPiece"
         yield "notes", self.df.shape
-        yield "sustain", self.sustain.shape
         yield "minutes", round(self.duration / 60, 2)
 
     @property
@@ -68,12 +68,7 @@ class MidiPiece:
         index = self.__sanitize_get_index(index)
         part = self.df[index].reset_index(drop=True)
 
-        # +0.2 to make sure we get some sustain data at the end to ring out
-        ids = (self.sustain.time >= part.start.min()) & (self.sustain.time <= part.end.max() + 0.2)
-        sustain_part = self.sustain[ids].reset_index(drop=True)
-
         first_sound = part.start.min()
-        sustain_part.time -= first_sound
         part.start -= first_sound
         part.end -= first_sound
 
@@ -82,7 +77,7 @@ class MidiPiece:
         out_source["start"] = self.source.get("start", 0) + index.start
         out_source["finish"] = self.source.get("finish", 0) + index.stop
         out_source["start_time"] = self.source.get("start_time", 0) + first_sound
-        out = MidiPiece(df=part, sustain=sustain_part, source=out_source)
+        out = MidiPiece(df=part, source=out_source)
 
         return out
 
@@ -115,6 +110,7 @@ class MidiPiece:
 @dataclass
 class MidiFile:
     path: str
+    apply_sustain: bool = True
     df: pd.DataFrame = field(init=False)
     sustain: pd.DataFrame = field(init=False)
     control_frame: pd.DataFrame = field(init=False, repr=False)
@@ -145,17 +141,10 @@ class MidiFile:
         return ccs
 
     def __post_init__(self):
+        # Read the MIDI object
         self._midi = pretty_midi.PrettyMIDI(self.path)
-        df = pd.DataFrame(
-            {
-                "pitch": [note.pitch for note in self.notes],
-                "velocity": [note.velocity for note in self.notes],
-                "start": [note.start for note in self.notes],
-                "end": [note.end for note in self.notes],
-            }
-        )
-        self.df = df.sort_values("start", ignore_index=True)
 
+        # Extract CC data
         self.control_frame = pd.DataFrame(
             {
                 "time": [cc.time for cc in self.control_changes],
@@ -168,19 +157,41 @@ class MidiFile:
         ids = self.control_frame.number == 64
         self.sustain = self.control_frame[ids].reset_index(drop=True)
 
+        # Extract notes
+        raw_df = pd.DataFrame(
+            {
+                "pitch": [note.pitch for note in self.notes],
+                "velocity": [note.velocity for note in self.notes],
+                "start": [note.start for note in self.notes],
+                "end": [note.end for note in self.notes],
+            }
+        )
+        self.raw_df = raw_df.sort_values("start", ignore_index=True)
+        if self.apply_sustain:
+            self.df = midi_tools.apply_sustain(
+                df=self.raw_df,
+                sustain=self.sustain,
+                sustain_threshold=64,
+            )
+        else:
+            self.df = self.raw_df
+
     def __getitem__(self, index: slice) -> MidiPiece:
         return self.piece[index]
         if not isinstance(index, slice):
             raise TypeError("You can only get a part of MidiFile that has multiple notes: Index must be a slice")
 
         part = self.df[index].reset_index(drop=True)
-
-        # +0.2 to make sure we get some sustain data at the end to ring out
-        ids = (self.sustain.time >= part.start.min()) & (self.sustain.time <= part.end.max() + 0.2)
-        sustain_part = self.sustain[ids].reset_index(drop=True)
-
         first_sound = part.start.min()
-        sustain_part.time -= first_sound
+
+        # TODO: When you start working with pedal data, add this to the Piece structure
+        if not self.apply_sustain:
+            # +0.2 to make sure we get some sustain data at the end to ring out
+            ids = (self.sustain.time >= part.start.min()) & (self.sustain.time <= part.end.max() + 0.2)
+            sustain_part = self.sustain[ids].reset_index(drop=True)
+            sustain_part.time -= first_sound
+
+        # Move the notes
         part.start -= first_sound
         part.end -= first_sound
 
@@ -188,7 +199,7 @@ class MidiFile:
             "type": "MidiFile",
             "path": self.path,
         }
-        out = MidiPiece(df=part, sustain=sustain_part, source=source)
+        out = MidiPiece(df=part, source=source)
 
         return out
 
@@ -200,7 +211,6 @@ class MidiFile:
         }
         out = MidiPiece(
             df=self.df,
-            sustain=self.sustain,
             source=source,
         )
         return out
