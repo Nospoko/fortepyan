@@ -1,11 +1,13 @@
 import pandas as pd
 
 
-def apply_sustain(df: pd.DataFrame, sustain: pd.DataFrame) -> pd.DataFrame:
-    SUSTAIN_THRESHOLD = 64
-
+def apply_sustain(
+    df: pd.DataFrame,
+    sustain: pd.DataFrame,
+    sustain_threshold: int = 64,
+) -> pd.DataFrame:
     # Mark sustain pedal as down or up based on threshold value
-    sustain["is_down"] = sustain.value >= SUSTAIN_THRESHOLD
+    sustain["is_down"] = sustain.value >= sustain_threshold
 
     # Group sustain pedal events by continuous down or up states
     ids = sustain.is_down
