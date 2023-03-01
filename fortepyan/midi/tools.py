@@ -44,7 +44,8 @@ def sustain_notes(df: pd.DataFrame, pedal_down: float, pedal_up: float) -> list[
             end_time = df[ids].start.min()
         else:
             # If there are no such rows, set the end time to be the end of the sustain
-            end_time = pedal_up
+            # or to be the release of the note, whichever is later
+            end_time = row.end if row.end > pedal_up else pedal_up
 
         end_times.append(end_time)
 
