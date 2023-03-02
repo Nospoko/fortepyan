@@ -17,6 +17,14 @@ class MidiPiece:
         yield "notes", self.df.shape
         yield "minutes", round(self.duration / 60, 2)
 
+    def __post_init__(self):
+        if not self.source:
+            self.source = {
+                "start": 0,
+                "start_time": 0,
+                "finish": self.size,
+            }
+
     @property
     def size(self) -> int:
         return self.df.shape[0]
@@ -86,6 +94,10 @@ class MidiPiece:
         duration = self.df.end.max() - self.df.start.min()
         return duration
 
+    @property
+    def end(self) -> float:
+        return self.df.end.max()
+
     def to_midi(self, track_name: str = "piano"):
         track = pretty_midi.PrettyMIDI()
         piano = pretty_midi.Instrument(program=0, name=track_name)
@@ -99,19 +111,27 @@ class MidiPiece:
             )
             piano.notes.append(note)
 
-        cc = [pretty_midi.ControlChange(64, int(r.value), r.time) for _, r in self.sustain.iterrows()]
-        piano.control_changes = cc
+        # cc = [pretty_midi.ControlChange(64, int(r.value), r.time) for _, r in self.sustain.iterrows()]
+        # piano.control_changes = cc
 
         track.instruments.append(piano)
 
         return track
+
+    @classmethod
+    def from_huggingface(cls, record: dict) -> "MidiPiece":
+        df = pd.DataFrame(record["notes"])
+        that = cls(df=df)
+        return that
 
 
 @dataclass
 class MidiFile:
     path: str
     apply_sustain: bool = True
+    sustain_threshold: int = 40
     df: pd.DataFrame = field(init=False)
+    raw_df: pd.DataFrame = field(init=False)
     sustain: pd.DataFrame = field(init=False)
     control_frame: pd.DataFrame = field(init=False, repr=False)
     _midi: pretty_midi.PrettyMIDI = field(init=False, repr=False)
@@ -171,7 +191,7 @@ class MidiFile:
             self.df = midi_tools.apply_sustain(
                 df=self.raw_df,
                 sustain=self.sustain,
-                sustain_threshold=64,
+                sustain_threshold=self.sustain_threshold,
             )
         else:
             self.df = self.raw_df

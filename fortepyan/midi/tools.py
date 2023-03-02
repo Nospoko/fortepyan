@@ -21,17 +21,25 @@ def apply_sustain(
         pedal_up = gdf.time.max()
 
         # Select notes affected by current sustain pedal down event
-        ids = (df.start >= pedal_down) & (df.start < pedal_up)
+        ids = (df.end >= pedal_down) & (df.end < pedal_up)
         affeced_notes = df[ids]
 
         # Modify end times of selected notes based on sustain pedal duration
-        modified_end_times = sustain_notes(affeced_notes, pedal_down, pedal_up)
+        modified_end_times = sustain_notes(
+            df=affeced_notes,
+            pedal_down=pedal_down,
+            pedal_up=pedal_up,
+        )
         df.loc[ids, "end"] = modified_end_times
 
     return df
 
 
-def sustain_notes(df: pd.DataFrame, pedal_down: float, pedal_up: float) -> list[float]:
+def sustain_notes(
+    df: pd.DataFrame,
+    pedal_down: float,
+    pedal_up: float,
+) -> list[float]:
     end_times = []
     for it, row in df.iterrows():
         # Get the rows in the DataFrame that correspond to the same pitch
@@ -45,7 +53,8 @@ def sustain_notes(df: pd.DataFrame, pedal_down: float, pedal_up: float) -> list[
         else:
             # If there are no such rows, set the end time to be the end of the sustain
             # or to be the release of the note, whichever is later
-            end_time = row.end if row.end > pedal_up else pedal_up
+            end_time = max(row.end, pedal_up)
+            # end_time = row.end if row.end > pedal_up else pedal_up
 
         end_times.append(end_time)
 

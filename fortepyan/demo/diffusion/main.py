@@ -20,8 +20,8 @@ def diffuse_midi_piece(midi_piece: MidiPiece) -> list[MidiPiece]:
 
         # TODO This is a poor mans linear beta schedule
         amplitude = it / 30
-        v_amplitude = 8 * amplitude
-        t_amplitude = 0.00 * amplitude
+        v_amplitude = 2 * amplitude
+        t_amplitude = 0.02 * amplitude
         s_noise = get_random(piece.size) * t_amplitude
         e_noise = get_random(piece.size) * t_amplitude
         v_noise = get_random(piece.size) * v_amplitude
@@ -39,7 +39,6 @@ def diffuse_midi_piece(midi_piece: MidiPiece) -> list[MidiPiece]:
         source["diffusion_v_amplitude"] = v_amplitude
         next_piece = MidiPiece(
             df=next_frame,
-            sustain=piece.sustain,
             source=source,
         )
         diffused.append(next_piece)
@@ -89,7 +88,6 @@ def merge_diffused_pieces(pieces: list[MidiPiece]) -> MidiPiece:
     source["history"] = "evolution of the diffusion process"
     new_piece = MidiPiece(
         df=df,
-        sustain=pieces[0].sustain,
         source=source,
     )
 
@@ -110,7 +108,7 @@ def animate_diffusion(
     scene = evolution_animation.EvolvingPianoRollScene(
         pieces,
         title_format="Diffusion Amplitude: {:.2f}",
-        title_key="diffusion_v_amplitude",
+        title_key="diffusion_t_amplitude",
         cmap=cmap,
     )
     scene_frames_dir = scene.render_mp()
