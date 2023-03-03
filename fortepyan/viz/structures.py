@@ -31,7 +31,7 @@ class PianoRoll:
         return self.midi_piece.df.pitch.max()
 
     def _build_image(self):
-        df = self.midi_piece.df
+        df = self.midi_piece.df_with_end
         if not self.time_end:
             # We don't really need a full second roundup
             self.time_end = np.ceil(df.end.max())

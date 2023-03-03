@@ -44,11 +44,11 @@ def process_dataset(dataset: Dataset) -> list[dict]:
 def main():
     new_dataset_name = "roszcz/maestro-v1-sustain"
 
-    for split in ["train", "test", "validation"]:
+    for split in ["test", "validation", "train"]:
         dataset = load_dataset("roszcz/maestro-v1", split=split)
 
-        fn_kwargs = {"sustain_threshold": 64}
-        new_dataset = dataset.map(process_record, fn_kwargs=fn_kwargs)
+        fn_kwargs = {"sustain_threshold": 62}
+        new_dataset = dataset.map(process_record, fn_kwargs=fn_kwargs, load_from_cache_file=False)
         new_dataset = new_dataset.remove_columns("control_changes")
 
         new_dataset.push_to_hub(

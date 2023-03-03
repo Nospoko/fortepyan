@@ -96,18 +96,25 @@ class MidiPiece:
 
     @property
     def end(self) -> float:
-        return self.df.end.max()
+        return self.df_with_end.end.max()
+
+    @property
+    def df_with_end(self) -> pd.DataFrame:
+        df = self.df
+        df["end"] = df.start + df.duration
+        return df
 
     def to_midi(self, track_name: str = "piano"):
         track = pretty_midi.PrettyMIDI()
         piano = pretty_midi.Instrument(program=0, name=track_name)
 
         for it, row in self.df.iterrows():
+            end = row.start + row.duration
             note = pretty_midi.Note(
                 velocity=int(row.velocity),
                 pitch=int(row.pitch),
                 start=row.start,
-                end=row.end,
+                end=end,
             )
             piano.notes.append(note)
 
@@ -121,6 +128,7 @@ class MidiPiece:
     @classmethod
     def from_huggingface(cls, record: dict) -> "MidiPiece":
         df = pd.DataFrame(record["notes"])
+        df["duration"] = df.end - df.start
         that = cls(df=df)
         return that
 
@@ -129,7 +137,7 @@ class MidiPiece:
 class MidiFile:
     path: str
     apply_sustain: bool = True
-    sustain_threshold: int = 40
+    sustain_threshold: int = 62
     df: pd.DataFrame = field(init=False)
     raw_df: pd.DataFrame = field(init=False)
     sustain: pd.DataFrame = field(init=False)
@@ -186,7 +194,9 @@ class MidiFile:
                 "end": [note.end for note in self.notes],
             }
         )
+        raw_df["duration"] = raw_df.end - raw_df.start
         self.raw_df = raw_df.sort_values("start", ignore_index=True)
+
         if self.apply_sustain:
             self.df = midi_tools.apply_sustain(
                 df=self.raw_df,

@@ -21,14 +21,14 @@ def diffuse_midi_piece(midi_piece: MidiPiece) -> list[MidiPiece]:
         # TODO This is a poor mans linear beta schedule
         amplitude = it / 30
         v_amplitude = 2 * amplitude
-        t_amplitude = 0.02 * amplitude
+        t_amplitude = 0.03 * amplitude
         s_noise = get_random(piece.size) * t_amplitude
-        e_noise = get_random(piece.size) * t_amplitude
+        d_noise = get_random(piece.size) * t_amplitude
         v_noise = get_random(piece.size) * v_amplitude
         next_frame = piece.df.copy()
         next_frame.start += s_noise
-        next_frame.end += e_noise
-        next_frame.velocity += v_noise
+        next_frame.duration += d_noise
+        next_frame.velocity += v_noise * 0
         next_frame.velocity = next_frame.velocity.clip(0, 127)
 
         # Make a copy of the source info ...

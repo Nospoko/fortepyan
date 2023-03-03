@@ -40,7 +40,7 @@ def sanitize_midi_piece(piece: MidiPiece) -> MidiPiece:
     duration_threshold = 1200
     if piece.duration > duration_threshold:
         # TODO Logger
-        print("Warning: playtime to long! Showing after trim")
+        print("Warning: playtime too long! Showing after trim")
         piece = piece.trim(0, duration_threshold)
 
     return piece

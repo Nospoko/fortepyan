@@ -148,7 +148,7 @@ class EvolvingPianoRollScene:
 
         self.pieces = pieces
         n_steps = len(pieces)
-        self.duration = max([piece.df.end.max() for piece in pieces])
+        self.duration = max([piece.df_with_end.end.max() for piece in pieces])
         self.time_per_step = self.duration / n_steps
 
         self.cmap = cmap
