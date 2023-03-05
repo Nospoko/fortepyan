@@ -21,16 +21,16 @@ def apply_sustain(
         pedal_up = gdf.time.max()
 
         # Select notes affected by current sustain pedal down event
-        ids = (df.end >= pedal_down) & (df.end < pedal_up)
-        affeced_notes = df[ids]
+        # ids = (df.end >= pedal_down) & (df.end < pedal_up)
+        # affeced_notes = df[ids]
 
         # Modify end times of selected notes based on sustain pedal duration
-        modified_end_times = sustain_notes(
-            df=affeced_notes,
+        df = sustain_notes(
+            df=df,
             pedal_down=pedal_down,
             pedal_up=pedal_up,
         )
-        df.loc[ids, "end"] = modified_end_times
+        # df.loc[ids, "end"] = modified_end_times
 
     return df
 
@@ -39,23 +39,29 @@ def sustain_notes(
     df: pd.DataFrame,
     pedal_down: float,
     pedal_up: float,
-) -> list[float]:
+) -> pd.DataFrame:
     end_times = []
-    for it, row in df.iterrows():
+
+    # Select notes affected by current sustain pedal down event
+    ids = (df.end >= pedal_down) & (df.end < pedal_up)
+    affeced_notes = df[ids]
+
+    for it, row in affeced_notes.iterrows():
         # Get the rows in the DataFrame that correspond to the same pitch
         # as the current row, and that start after the current row
-        ids = (df.pitch == row.pitch) & (df.start > row.start)
+        jds = (df.pitch == row.pitch) & (df.start > row.start)
 
-        if ids.any():
+        if jds.any():
             # If there are any such rows, set the end time
             # to be the start time of the next note of the same pitch
-            end_time = df[ids].start.min()
+            end_time = min(df[jds].start.min(), pedal_up)
         else:
             # If there are no such rows, set the end time to be the end of the sustain
             # or to be the release of the note, whichever is later
             end_time = max(row.end, pedal_up)
-            # end_time = row.end if row.end > pedal_up else pedal_up
 
         end_times.append(end_time)
 
-    return end_times
+    df.loc[ids, "end"] = end_times
+
+    return df

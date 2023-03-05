@@ -100,7 +100,7 @@ class MidiPiece:
 
     @property
     def df_with_end(self) -> pd.DataFrame:
-        df = self.df
+        df = self.df.copy()
         df["end"] = df.start + df.duration
         return df
 
@@ -108,13 +108,12 @@ class MidiPiece:
         track = pretty_midi.PrettyMIDI()
         piano = pretty_midi.Instrument(program=0, name=track_name)
 
-        for it, row in self.df.iterrows():
-            end = row.start + row.duration
+        for it, row in self.df_with_end.iterrows():
             note = pretty_midi.Note(
                 velocity=int(row.velocity),
                 pitch=int(row.pitch),
                 start=row.start,
-                end=end,
+                end=row.end,
             )
             piano.notes.append(note)
 
@@ -194,7 +193,6 @@ class MidiFile:
                 "end": [note.end for note in self.notes],
             }
         )
-        raw_df["duration"] = raw_df.end - raw_df.start
         self.raw_df = raw_df.sort_values("start", ignore_index=True)
 
         if self.apply_sustain:
@@ -205,6 +203,8 @@ class MidiFile:
             )
         else:
             self.df = self.raw_df
+
+        self.df["duration"] = self.df.end - self.df.start
 
     def __getitem__(self, index: slice) -> MidiPiece:
         return self.piece[index]
