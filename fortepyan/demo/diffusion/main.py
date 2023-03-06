@@ -5,50 +5,7 @@ import numpy as np
 from fortepyan.audio.render import midi_to_mp3
 from fortepyan.midi.structures import MidiPiece
 from fortepyan.animation import evolution as evolution_animation
-
-
-def diffuse_midi_piece(midi_piece: MidiPiece) -> list[MidiPiece]:
-    def get_random(size):
-        return np.random.random(size) - 0.5
-
-    n_steps = 100
-    midi_piece.source["diffusion_t_amplitude"] = 0
-    midi_piece.source["diffusion_v_amplitude"] = 0
-    diffused = [midi_piece]
-    for it in range(n_steps):
-        piece = diffused[-1]
-
-        # TODO This is a poor mans linear beta schedule
-        amplitude = it / 30
-        v_amplitude = 2 * amplitude
-        t_amplitude = 0.03 * amplitude
-        s_noise = get_random(piece.size) * t_amplitude
-        d_noise = get_random(piece.size) * t_amplitude
-        v_noise = get_random(piece.size) * v_amplitude
-        next_frame = piece.df.copy()
-        next_frame.start += s_noise
-        next_frame.duration += d_noise
-        next_frame.velocity += v_noise * 0
-        next_frame.velocity = next_frame.velocity.clip(0, 127)
-
-        # Make a copy of the source info ...
-        source = dict(piece.source)
-        # ... and note the diffusion info
-        source["diffusion_step"] = it
-        source["diffusion_t_amplitude"] = t_amplitude
-        source["diffusion_v_amplitude"] = v_amplitude
-        next_piece = MidiPiece(
-            df=next_frame,
-            source=source,
-        )
-        diffused.append(next_piece)
-
-    # Move all pieces, so nothing starts before 0s
-    start_shift = min([piece.df.start.min() for piece in diffused])
-    for piece in diffused:
-        piece.time_shift(-start_shift)
-
-    return diffused
+from fortepyan.demo.diffusion import process as diffusion_process
 
 
 def merge_diffused_pieces(pieces: list[MidiPiece]) -> MidiPiece:
@@ -94,20 +51,47 @@ def merge_diffused_pieces(pieces: list[MidiPiece]) -> MidiPiece:
     return new_piece
 
 
+def cosine_schedule(T: int) -> np.array:
+    steps = T + 1
+    X = np.linspace(0, T, steps)
+    s = 0.008
+    alpha_cumprod = np.cos(((X / T) + s) / (1 + s) * np.pi * 0.5) ** 2
+    return alpha_cumprod
+
+
+def sigmoid_schedule(T: int) -> np.array:
+    def sigmoid(x):
+        return 1 / (1 + np.exp(-x))
+
+    beta_start = 0.0001
+    beta_end = 1
+
+    X = np.linspace(-6, 6, T)
+    betas = sigmoid(X) * (beta_end - beta_start) + beta_start
+
+    alphas = 1.0 - betas
+    alpha_cumprod = np.cumprod(alphas)
+
+    return alpha_cumprod
+
+
 def animate_diffusion(
     piece: MidiPiece,
     movie_path: str = "tmp/tmp.mp4",
     cmap="PuBuGn",
 ):
-    pieces = diffuse_midi_piece(piece)
+    T = 200
+    alpha_cumprod = cosine_schedule(T)
+    pieces = diffusion_process.scheduled_diffusion(piece, alpha_cumprod)
 
     # We want to see the reverse diffusion as well
-    pieces = 20 * pieces[:1] + pieces + pieces[::-1] + 20 * pieces[:1]
+    pieces = 100 * pieces[:1] + pieces + pieces[::-1] + 100 * pieces[:1]
+    # pieces = pieces[::-1]
     evolved_piece = merge_diffused_pieces(pieces)
 
     scene = evolution_animation.EvolvingPianoRollScene(
         pieces,
-        title_format="Diffusion Amplitude: {:.2f}",
+        title_format="Mean Time Error: {:.3f} [s]",
         title_key="diffusion_t_amplitude",
         cmap=cmap,
     )
