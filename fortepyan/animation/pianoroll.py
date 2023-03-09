@@ -59,6 +59,13 @@ class PianoRollScene:
             cmap=self.cmap,
         )
 
+        # Set the x-axis tick positions and labels, and add a label to the x-axis
+        self.velocity_ax.set_xticks(piano_roll.x_ticks)
+        self.velocity_ax.set_xticklabels(piano_roll.x_labels, rotation=60, fontsize=15)
+        self.velocity_ax.set_xlabel("Time [s]")
+        # Set the x-axis limits to the range of the data
+        self.velocity_ax.set_xlim(0, piano_roll.duration)
+
     def save_frame(self, savepath="tmp/tmp.png"):
         self.figure.tight_layout()
 

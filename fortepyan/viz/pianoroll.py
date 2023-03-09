@@ -25,12 +25,18 @@ def draw_pianoroll_with_velocities(
     piece = sanitize_midi_piece(midi_piece)
     piano_roll = PianoRoll(piece, time_end=time_end)
     draw_piano_roll(ax=axes[0], piano_roll=piano_roll, cmap=cmap)
-    draw_velocities(ax=axes[1], piano_roll=piano_roll, cmap=cmap)
+    v_ax = axes[1]
+    draw_velocities(ax=v_ax, piano_roll=piano_roll, cmap=cmap)
 
     if title:
         axes[0].set_title(title, fontsize=20)
 
-    # sanitize_xticks(axes[1], piece)
+    # Set the x-axis tick positions and labels, and add a label to the x-axis
+    v_ax.set_xticks(piano_roll.x_ticks)
+    v_ax.set_xticklabels(piano_roll.x_labels, rotation=60, fontsize=15)
+    v_ax.set_xlabel("Time [s]")
+    # Set the x-axis limits to the range of the data
+    v_ax.set_xlim(0, piano_roll.duration)
 
     return fig
 
@@ -139,15 +145,12 @@ def draw_velocities(
         colors=color,
     )
     ax.set_ylim(0, 128)
-
-    # Set the x-axis tick positions and labels, and add a label to the x-axis
-    ax.set_xticks(piano_roll.x_ticks)
-    ax.set_xticklabels(piano_roll.x_labels, rotation=60, fontsize=15)
-    ax.set_xlabel("Time [s]")
-    # Set the x-axis limits to the range of the data
-    ax.set_xlim(0, piano_roll.duration)
     # Add a grid to the plot
     ax.grid()
+
+    # Vertical position indicator
+    if piano_roll.current_time:
+        ax.axvline(piano_roll.current_time, color="k", lw=0.5)
 
     return ax
 

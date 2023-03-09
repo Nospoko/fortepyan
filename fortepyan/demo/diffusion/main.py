@@ -77,6 +77,7 @@ def sigmoid_schedule(T: int) -> np.array:
 
 def animate_diffusion(
     piece: MidiPiece,
+    title: str,
     movie_path: str = "tmp/tmp.mp4",
     cmap="PuBuGn",
 ):
@@ -89,10 +90,12 @@ def animate_diffusion(
     # pieces = pieces[::-1]
     evolved_piece = merge_diffused_pieces(pieces)
 
-    scene = evolution_animation.EvolvingPianoRollScene(
+    chart_data = [p.source["diffusion_t_amplitude"] for p in pieces]
+
+    scene = evolution_animation.EvolvingPianoRollSceneWithChart(
         pieces,
-        title_format="Mean Time Error: {:.3f} [s]",
-        title_key="diffusion_t_amplitude",
+        chart_data=chart_data,
+        title=title,
         cmap=cmap,
     )
     scene_frames_dir = scene.render_mp()
