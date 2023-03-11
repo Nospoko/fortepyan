@@ -83,14 +83,19 @@ def animate_diffusion(
 ):
     T = 200
     alpha_cumprod = cosine_schedule(T)
-    pieces = diffusion_process.scheduled_diffusion(piece, alpha_cumprod)
+    pieces = diffusion_process.scheduled_diffusion(
+        midi_piece=piece,
+        alpha_cumprod=alpha_cumprod,
+        diffuse_start=False,
+        diffuse_velocity=True,
+    )
 
     # We want to see the reverse diffusion as well
-    pieces = 100 * pieces[:1] + pieces + pieces[::-1] + 100 * pieces[:1]
+    pieces = 10 * pieces[:1] + pieces + pieces[::-1] + 10 * pieces[:1]
     # pieces = pieces[::-1]
     evolved_piece = merge_diffused_pieces(pieces)
 
-    chart_data = [p.source["diffusion_t_amplitude"] for p in pieces]
+    chart_data = [p.source["diffusion_v_amplitude"] for p in pieces]
 
     scene = evolution_animation.EvolvingPianoRollSceneWithChart(
         pieces,

@@ -51,6 +51,8 @@ def naive_diffusion(midi_piece: MidiPiece) -> list[MidiPiece]:
 def scheduled_diffusion(
     midi_piece: MidiPiece,
     alpha_cumprod: np.array,
+    diffuse_start: bool = True,
+    diffuse_velocity: bool = True,
 ) -> list[MidiPiece]:
     midi_piece.source["diffusion_step"] = 0
     midi_piece.source["diffusion_t_amplitude"] = 0
@@ -58,8 +60,8 @@ def scheduled_diffusion(
 
     # Time in seconds
     max_t_shift = 0.03
-    max_v_shift = 30
-    noise = np.random.normal(size=midi_piece.size)
+    # max_v_shift = 127
+    noise = np.random.normal(size=midi_piece.size, scale=0.7)
 
     diffused = [midi_piece]
 
@@ -67,20 +69,29 @@ def scheduled_diffusion(
         piece = diffused[-1]
         next_frame = midi_piece.df.copy()
 
-        t_amplitude = max_t_shift * (1 - alpha_cumulative)
-        start_noise = t_amplitude * noise
-        next_frame.start += start_noise
-
-        v_amplitude = max_v_shift * (1 - alpha_cumulative)
-        v_noise = v_amplitude * noise
-        next_frame.velocity = (next_frame.velocity + v_noise).clip(0, 127)
-
         # Make a copy of the source info ...
         source = dict(piece.source)
         # ... and note the diffusion info
         source["diffusion_step"] = it
-        source["diffusion_t_amplitude"] = t_amplitude
-        source["diffusion_v_amplitude"] = v_amplitude
+
+        if diffuse_start:
+            t_amplitude = max_t_shift * (1 - alpha_cumulative)
+            start_noise = t_amplitude * noise
+            next_frame.start += start_noise
+            source["diffusion_t_amplitude"] = t_amplitude
+
+        if diffuse_velocity:
+            # v_amplitude = max_v_shift * (1 - alpha_cumulative)
+            # v_noise = v_amplitude * noise
+            v_amplitude = 1 - alpha_cumulative
+            velocity = next_frame.velocity.values / 127 - 0.5
+            velocity = np.sqrt(alpha_cumulative) * velocity + noise * v_amplitude
+            velocity = 127 * (velocity + 0.5)
+            next_frame.velocity = velocity.clip(0, 127)
+
+            # next_frame.velocity = (np.sqrt(alpha_cumulative) * next_frame.velocity + v_noise).clip(0, 127)
+            source["diffusion_v_amplitude"] = v_amplitude
+
         next_piece = MidiPiece(
             df=next_frame,
             source=source,
