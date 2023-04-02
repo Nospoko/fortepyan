@@ -81,9 +81,9 @@ class MidiPiece:
         part.end -= first_sound
 
         # Make sure the piece can always be track back to the original file exactly
-        out_source = self.source
+        out_source = dict(self.source)
         out_source["start"] = self.source.get("start", 0) + index.start
-        out_source["finish"] = self.source.get("finish", 0) + index.stop
+        out_source["finish"] = self.source.get("start", 0) + index.stop
         out_source["start_time"] = self.source.get("start_time", 0) + first_sound
         out = MidiPiece(df=part, source=out_source)
 
@@ -128,7 +128,12 @@ class MidiPiece:
     def from_huggingface(cls, record: dict) -> "MidiPiece":
         df = pd.DataFrame(record["notes"])
         df["duration"] = df.end - df.start
-        that = cls(df=df)
+        source = {
+            "composer": record["composer"],
+            "title": record["title"],
+            "midi_filename": record["midi_filename"],
+        }
+        that = cls(df=df, source=source)
         return that
 
 
