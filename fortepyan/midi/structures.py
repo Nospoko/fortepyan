@@ -47,9 +47,10 @@ class MidiPiece:
         - MidiPiece: the trimmed MidiPiece object
         """
         # Filter the rows in the data frame that are within the specified start and end time
-        ids = (self.df.start >= start) & (self.df.end <= finish)
+        ids = (self.df.start >= start) & (self.df.start <= finish)
         # Get the indices of the rows that meet the criteria
         idxs = np.where(ids)[0]
+
         # Get the start and end indices for the new MidiPiece object
         start = idxs[0]
         finish = idxs[-1] + 1
