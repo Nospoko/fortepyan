@@ -91,9 +91,6 @@ def draw_piano_roll(
     Returns:
         ax: Matplotlib axis with pianoroll.
     """
-    # piece = sanitize_midi_piece(midi_piece)
-    # piano_roll = prepare_piano_roll(piece.df, time_indicator=time)
-
     ax.imshow(
         piano_roll.roll,
         aspect="auto",

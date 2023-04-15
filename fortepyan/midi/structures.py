@@ -129,10 +129,13 @@ class MidiPiece:
     def from_huggingface(cls, record: dict) -> "MidiPiece":
         df = pd.DataFrame(record["notes"])
         df["duration"] = df.end - df.start
+
         source = {
-            "composer": record["composer"],
-            "title": record["title"],
-            "midi_filename": record["midi_filename"],
+            "composer": record.get("composer"),
+            "title": record.get("title"),
+            "midi_filename": record.get("midi_filename"),
+            "record_id": record.get("record_id"),
+            "user": record.get("user"),
         }
         that = cls(df=df, source=source)
         return that
