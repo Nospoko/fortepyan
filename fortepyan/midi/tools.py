@@ -30,7 +30,9 @@ def apply_sustain(
             pedal_down=pedal_down,
             pedal_up=pedal_up,
         )
-        # df.loc[ids, "end"] = modified_end_times
+
+    # Keep duration consistent
+    df["duration"] = df.end - df.start
 
     return df
 

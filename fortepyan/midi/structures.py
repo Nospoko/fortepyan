@@ -213,8 +213,6 @@ class MidiFile:
         else:
             self.df = self.raw_df
 
-        self.df["duration"] = self.df.end - self.df.start
-
     def __getitem__(self, index: slice) -> MidiPiece:
         return self.piece[index]
         if not isinstance(index, slice):

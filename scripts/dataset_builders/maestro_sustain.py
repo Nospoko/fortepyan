@@ -1,6 +1,5 @@
 import pandas as pd
-from tqdm import tqdm
-from datasets import Dataset, load_dataset
+from datasets import load_dataset
 
 from fortepyan import config as C
 from fortepyan.midi import tools as midi_tools
@@ -24,21 +23,6 @@ def process_record(record: dict, sustain_threshold: int) -> dict:
     record_update = {"notes": df}
 
     return record_update
-
-
-def process_dataset(dataset: Dataset) -> list[dict]:
-    records = []
-    for record in tqdm(dataset, desc="Applying sustain"):
-        df = pd.DataFrame(record["notes"])
-        cc = pd.DataFrame(record["control_changes"])
-        sustain = cc[cc.number == 64].reset_index(drop=True)
-        df = midi_tools.apply_sustain(df, sustain)
-
-        copy_columns = ["composer", "title", "year", "midi_filename"]
-        new_record = {"notes": df} | {k: record[k] for k in copy_columns}
-        records.append(new_record)
-
-    return records
 
 
 def main():

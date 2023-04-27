@@ -35,7 +35,7 @@ def load_maestro(maestro_root: str) -> pd.DataFrame:
 def make_maestro_records(mdf: pd.DataFrame) -> list[dict]:
     records = []
     for it, row in tqdm(mdf.iterrows(), total=mdf.shape[0], desc="Building maestro records"):
-        mf = MidiFile(row.midi_path)
+        mf = MidiFile(row.midi_path, apply_sustain=False)
         cc = mf._midi.instruments[0].control_changes
         cc_frame = pd.DataFrame(
             {
@@ -67,7 +67,7 @@ def main():
 
     dataset_name = "roszcz/maestro-v1"
 
-    for split in ["train", "test", "validation"]:
+    for split in ["validation", "test", "train"]:
         dataset_split = dataset.filter(lambda r: r["split"] == split)
         dataset_split = dataset_split.remove_columns("split")
 
