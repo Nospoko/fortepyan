@@ -33,8 +33,15 @@ requires-python = ">=3.9"
 [project.urls]
 Homepage = "https://github.com/Nospoko/fortepyan"
 
-[options]
-packages = find:
+[tool.setuptools]
+packages = [
+    "fortepyan",
+    "fortepyan.view",
+    "fortepyan.midi",
+    "fortepyan.audio",
+    "fortepyan.view.animation",
+    "fortepyan.view.pianoroll"
+]
 
 [tool.bumpver]
 current_version = "0.1.11"
