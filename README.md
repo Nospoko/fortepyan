@@ -1,5 +1,16 @@
 # fortepyan :musical_keyboard:
 
+### Usage
+
+```python
+import fortepyan as ff
+
+piece = ff.MidiPiece.from_file("mymidi.mid")
+
+ff.view.draw_pianoroll_with_velocities(piece)
+ff.view.make_piano_roll_video(piece, "tmp.mp4")
+```
+
 ### Development
 
 Pre-commit hooks with forced python formatting ([black](https://github.com/psf/black), [flake8](https://flake8.pycqa.org/en/latest/), and [isort](https://pycqa.github.io/isort/)):
