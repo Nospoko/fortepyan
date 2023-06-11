@@ -140,6 +140,11 @@ class MidiPiece:
         that = cls(df=df, source=source)
         return that
 
+    @classmethod
+    def from_file(cls, path: str) -> "MidiPiece":
+        piece = MidiFile(str(path)).piece
+        return piece
+
 
 @dataclass
 class MidiFile:
