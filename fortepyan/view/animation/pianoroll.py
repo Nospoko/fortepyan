@@ -7,7 +7,7 @@ import pandas as pd
 from matplotlib import pyplot as plt
 
 from fortepyan.midi.structures import MidiPiece
-from fortepyan.view.piano_roll import main as roll
+from fortepyan.view.pianoroll import main as roll
 from fortepyan.view.pianoroll.structures import PianoRoll
 
 

@@ -2,7 +2,7 @@ import subprocess
 
 from fortepyan.audio.render import midi_to_mp3
 from fortepyan.midi.structures import MidiPiece
-from fortepyan.animation import pianoroll as pianoroll_animation
+from fortepyan.view.animation import pianoroll as pianoroll_animation
 
 
 def make_piano_roll_video(
