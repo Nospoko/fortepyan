@@ -6,9 +6,9 @@ import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 
-from fortepyan.viz import pianoroll as roll
 from fortepyan.viz.structures import PianoRoll
 from fortepyan.midi.structures import MidiPiece
+from fortepyan.view.pianoroll import main as roll
 
 
 class MutePianoRollEvolution:
