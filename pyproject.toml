@@ -40,7 +40,8 @@ packages = [
     "fortepyan.midi",
     "fortepyan.audio",
     "fortepyan.view.animation",
-    "fortepyan.view.pianoroll"
+    "fortepyan.view.pianoroll",
+    "fortepyan.analytics.clustering",
 ]
 
 [tool.bumpver]
