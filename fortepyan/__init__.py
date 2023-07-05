@@ -4,7 +4,7 @@ from fortepyan import view
 from fortepyan.midi.structures import MidiFile, MidiPiece
 
 __all__ = ["view", "MidiFile", "MidiPiece"]
-__version__ = "0.2.0"
+__version__ = "0.2.1"
 
 # Pretty MIDI will throw an unwanted error for large files with high PPQ
 # This is a workaround
