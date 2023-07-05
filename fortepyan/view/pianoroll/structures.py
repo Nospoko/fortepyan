@@ -88,3 +88,22 @@ class PianoRoll:
         x_ticks = np.arange(0, step * n_ticks, step)
         self.x_ticks = np.round(x_ticks)
         self.x_labels = [round(xt) for xt in self.x_ticks]
+
+
+@dataclass
+class FigureResolution:
+    w_pixels: int = 1920 // 2
+    h_pixels: int = 1080 // 2
+    dpi: int = 72
+
+    @property
+    def w_inches(self) -> float:
+        return self.w_pixels / self.dpi
+
+    @property
+    def h_inches(self) -> float:
+        return self.h_pixels / self.dpi
+
+    @property
+    def figsize(self) -> tuple[float, float]:
+        return self.w_inches, self.h_inches

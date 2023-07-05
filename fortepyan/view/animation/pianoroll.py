@@ -8,7 +8,7 @@ from matplotlib import pyplot as plt
 
 from fortepyan.midi.structures import MidiPiece
 from fortepyan.view.pianoroll import main as roll
-from fortepyan.view.pianoroll.structures import PianoRoll
+from fortepyan.view.pianoroll.structures import PianoRoll, FigureResolution
 
 
 class PianoRollScene:
@@ -22,10 +22,12 @@ class PianoRollScene:
         self.title = title
         self.cmap = cmap
 
+        figres = FigureResolution()
         f, axes = plt.subplots(
             nrows=2,
             ncols=1,
-            figsize=[16, 9],
+            figsize=figres.figsize,
+            dpi=figres.dpi,
             gridspec_kw={
                 "height_ratios": [4, 1],
                 "hspace": 0,

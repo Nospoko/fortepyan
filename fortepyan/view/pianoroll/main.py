@@ -4,7 +4,7 @@ import pandas as pd
 from matplotlib import pyplot as plt
 
 from fortepyan.midi.structures import MidiPiece
-from fortepyan.view.pianoroll.structures import PianoRoll
+from fortepyan.view.pianoroll.structures import PianoRoll, FigureResolution
 
 
 def draw_pianoroll_with_velocities(
@@ -12,11 +12,16 @@ def draw_pianoroll_with_velocities(
     time_end: float = None,
     title: str = None,
     cmap: str = "GnBu",
+    figres: FigureResolution = None,
 ):
+    if not figres:
+        figres = FigureResolution()
+
     fig, axes = plt.subplots(
         nrows=2,
         ncols=1,
-        figsize=[16, 9],
+        figsize=figres.figsize,
+        dpi=figres.dpi,
         gridspec_kw={
             "height_ratios": [4, 1],
             "hspace": 0,
