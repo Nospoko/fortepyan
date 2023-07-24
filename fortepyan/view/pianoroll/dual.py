@@ -4,7 +4,7 @@ from cmcrameri import cm
 from matplotlib import pyplot as plt
 from matplotlib.colors import ListedColormap
 
-from fortepyan import MidiPiece
+from fortepyan.midi.structures import MidiPiece
 from fortepyan.view.pianoroll import main as pianoroll_view
 from fortepyan.view.pianoroll.structures import DualPianoRoll, FigureResolution
 
