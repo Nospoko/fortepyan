@@ -35,8 +35,8 @@ def make_pianoforai_records(
     for it, row in tqdm(df.iterrows(), total=df.shape[0], desc="Building Piano For AI records"):
         savepath = f"/tmp/{row.filename}"
         s3_client.download_file(Bucket=bucket, Key=row.key, Filename=savepath)
-
         mf = MidiFile(savepath, apply_sustain=False)
+
         cc = mf._midi.instruments[0].control_changes
         cc_frame = pd.DataFrame(
             {

@@ -1,7 +1,11 @@
+from typing import Union
 from dataclasses import field, dataclass
 
+import matplotlib
 import numpy as np
+from cmcrameri import cm
 from pretty_midi import note_number_to_name
+from matplotlib.colors import ListedColormap
 
 from fortepyan.midi.structures import MidiPiece
 
@@ -88,6 +92,80 @@ class PianoRoll:
         x_ticks = np.arange(0, step * n_ticks, step)
         self.x_ticks = np.round(x_ticks)
         self.x_labels = [round(xt) for xt in self.x_ticks]
+
+
+@dataclass
+class DualPianoRoll(PianoRoll):
+    base_cmap: Union[str, ListedColormap] = cm.devon_r
+    marked_cmap: Union[str, ListedColormap] = "RdPu"
+    mark_key: str = "mask"
+
+    def __post_init__(self):
+        # Strings are for the standard set of colormaps
+        # ListedColormap is for custom solutions (e.g.: cmcrameri)
+        if isinstance(self.base_cmap, ListedColormap):
+            self.base_colormap = self.base_cmap
+        else:
+            self.base_colormap = matplotlib.colormaps[self.base_cmap]
+
+        if isinstance(self.marked_cmap, matplotlib.colors.ListedColormap):
+            self.marked_colormap = self.marked_cmap
+        else:
+            self.marked_colormap = matplotlib.colormaps[self.marked_cmap]
+        super().__post_init__()
+
+    def _build_image(self):
+        df = self.midi_piece.df_with_end
+        if not self.time_end:
+            # We don't really need a full second roundup
+            self.time_end = np.ceil(df.end.max())
+
+        if self.time_end < df.end.max():
+            print("Warning, piano roll is not showing everything!")
+
+        # duration = time_end - time_start
+        self.duration = self.time_end
+        n_time_steps = self.RESOLUTION * int(np.ceil(self.duration))
+
+        # Adjust velocity color intensity to be sure it's visible
+        min_value = 20
+        max_value = 160
+
+        # Canvas to draw on
+        background = np.zeros((self.N_PITCHES, n_time_steps), np.uint8)
+
+        # Draw black keys with the base colormap
+        for it in range(self.N_PITCHES):
+            is_black = it % 12 in [1, 3, 6, 8, 10]
+            if is_black:
+                background[it, :] += min_value
+        # This makes the array RGB
+        background = self.base_colormap(background)
+
+        # Draw notes
+        for it, row in df.iterrows():
+            note_on = row.start * self.RESOLUTION
+            note_on = np.round(note_on).astype(int)
+
+            note_end = row.end * self.RESOLUTION
+            note_end = np.round(note_end).astype(int)
+            pitch_idx = int(row.pitch)
+
+            # This note is sounding right now
+            if self.current_time and note_on <= self.current_time * self.RESOLUTION < note_end:
+                color_value = max_value
+            else:
+                color_value = min_value + row.velocity
+
+            # Colormaps are up to 255, but velocity is up to 127
+            color_value += 90
+
+            cmap = self.marked_colormap if row[self.mark_key] else self.base_colormap
+            background[pitch_idx, note_on:note_end] = cmap(color_value)
+
+            # pianoroll[pitch_idx, note_on:note_end] = color_value
+
+        self.roll = background
 
 
 @dataclass

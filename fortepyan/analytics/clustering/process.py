@@ -100,7 +100,7 @@ def get_gram_variants(
     idxs = np.where(ngrams.df.ngram == gram)[0]
     idxs = filter_overlaping_sequences(idxs, ngrams.n)
 
-    # Fuzzy-wuzzy extension of thee seeds, *threshold* is a measure
+    # Fuzzy-wuzzy extension of the seeds, *threshold* is a measure
     # of deviation between two sequences that are being compared
     # "if the sequence is extended further, next *threshold* notes
     # are going to be different between both sequences

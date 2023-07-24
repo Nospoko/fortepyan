@@ -1,6 +1,5 @@
 import matplotlib
 import numpy as np
-import pandas as pd
 from matplotlib import pyplot as plt
 
 from fortepyan.midi.structures import MidiPiece
@@ -55,26 +54,6 @@ def sanitize_midi_piece(piece: MidiPiece) -> MidiPiece:
         piece = piece.trim(0, duration_threshold)
 
     return piece
-
-
-def sanitize_midi_frame(mf: pd.DataFrame) -> pd.DataFrame:
-    # Do not modify input data
-    df = mf.copy()
-
-    # Make it start at 0.0
-    df.end -= df.start.min()
-    df.start -= df.start.min()
-    duration_in = df.end.max()
-
-    # 20 minutes?
-    duration_threshold = 1200
-    if duration_in > duration_threshold:
-        # TODO Logger
-        print("Warning: playtime to long! Showing after trim")
-        ids = df.end <= duration_threshold
-        df = df[ids]
-
-    return df
 
 
 def draw_piano_roll(
