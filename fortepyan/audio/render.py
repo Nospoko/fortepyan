@@ -32,6 +32,7 @@ def midi_to_mp3(midi: pretty_midi.PrettyMIDI, mp3_path: str = None):
     # Wav to mp3
     if not mp3_path:
         mp3_path = tempfile.mkstemp(suffix=".mp3")[1]
+
     print("Rendering audio to file:", mp3_path)
     AudioSegment.from_wav(tmp_wav_path).export(mp3_path, format="mp3")
 
