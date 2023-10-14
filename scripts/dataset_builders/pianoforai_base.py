@@ -1,5 +1,3 @@
-import os
-
 import pandas as pd
 from tqdm import tqdm
 from datasets import Dataset
@@ -33,27 +31,32 @@ def make_pianoforai_records(
     records = []
 
     for it, row in tqdm(df.iterrows(), total=df.shape[0], desc="Building Piano For AI records"):
-        savepath = f"/tmp/{row.filename}"
-        s3_client.download_file(Bucket=bucket, Key=row.key, Filename=savepath)
-        mf = MidiFile(savepath, apply_sustain=False)
+        savepath = f"tmp/pfa-2023-09-18/{row.filename}"
+        try:
+            s3_client.download_file(Bucket=bucket, Key=row.key, Filename=savepath)
+            mf = MidiFile(savepath, apply_sustain=False)
 
-        cc = mf._midi.instruments[0].control_changes
-        cc_frame = pd.DataFrame(
-            {
-                "number": [c.number for c in cc],
-                "value": [c.value for c in cc],
-                "time": [c.time for c in cc],
+            cc = mf._midi.instruments[0].control_changes
+            cc_frame = pd.DataFrame(
+                {
+                    "number": [c.number for c in cc],
+                    "value": [c.value for c in cc],
+                    "time": [c.time for c in cc],
+                }
+            )
+            record = {
+                "notes": mf.df,
+                "control_changes": cc_frame,
+                "midi_filename": row.filename,
+                "record_id": row.record_id,
+                "user_id": row.user_id,
+                "user": row.username,
             }
-        )
-        record = {
-            "notes": mf.df,
-            "control_changes": cc_frame,
-            "midi_filename": row.filename,
-            "record_id": row.record_id,
-            "user_id": row.user_id,
-            "user": row.username,
-        }
-        records.append(record)
-        os.remove(savepath)
+            records.append(record)
+        except Exception as e:
+            print("Fail!", e)
+            print(row.to_dict())
+            print("=============" * 3)
+        # os.remove(savepath)
 
     return records
