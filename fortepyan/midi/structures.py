@@ -18,6 +18,25 @@ class MidiPiece:
         yield "minutes", round(self.duration / 60, 2)
 
     def __post_init__(self):
+        # Ensure at least two of the three timing columns are present
+        timing_columns = {"start", "end", "duration"}
+        if sum(col in self.df.columns for col in timing_columns) < 2:
+            raise ValueError("The DataFrame must have at least two of the following columns: 'start', 'end', 'duration'.")
+
+        # Calculate the missing timing column if necessary
+        if "start" not in self.df.columns:
+            self.df["start"] = self.df["end"] - self.df["duration"]
+        elif "end" not in self.df.columns:
+            self.df["end"] = self.df["start"] + self.df["duration"]
+        elif "duration" not in self.df.columns:
+            self.df["duration"] = self.df["end"] - self.df["start"]
+
+        # Check for the absolutely required columns: 'pitch' and 'velocity'
+        if "pitch" not in self.df.columns:
+            raise ValueError("The DataFrame is missing the required column: 'pitch'.")
+        if "velocity" not in self.df.columns:
+            raise ValueError("The DataFrame is missing the required column: 'velocity'.")
+
         if not self.source:
             self.source = {
                 "start": 0,
