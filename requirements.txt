@@ -8,4 +8,5 @@ numpy==1.23.4
 pretty-midi==0.2.9
 psycopg2==2.9.5
 pydub==0.25.1
+pytest==7.4.3
 SQLAlchemy==1.4.45
