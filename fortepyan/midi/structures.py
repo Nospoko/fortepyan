@@ -82,7 +82,7 @@ class MidiPiece:
         if not isinstance(index, slice):
             raise TypeError("You can only get a part of MidiFile that has multiple notes: Index must be a slice")
 
-        # If you wan piece[:stop]
+        # If you want piece[:stop]
         if not index.start:
             index = slice(0, index.stop)
 
