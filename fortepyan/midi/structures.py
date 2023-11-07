@@ -128,17 +128,13 @@ class MidiPiece:
         track = pretty_midi.PrettyMIDI()
         piano = pretty_midi.Instrument(program=0, name=track_name)
 
-        for it, row in self.df_with_end.iterrows():
-            note = pretty_midi.Note(
-                velocity=int(row.velocity),
-                pitch=int(row.pitch),
-                start=row.start,
-                end=row.end,
-            )
-            piano.notes.append(note)
+        # Convert the DataFrame to a list of tuples to avoid pandas overhead in the loop
+        note_data = self.df[["velocity", "pitch", "start", "end"]].to_records(index=False)
 
-        # cc = [pretty_midi.ControlChange(64, int(r.value), r.time) for _, r in self.sustain.iterrows()]
-        # piano.control_changes = cc
+        # Now we can iterate through this array which is more efficient than DataFrame iterrows
+        for velocity, pitch, start, end in note_data:
+            note = pretty_midi.Note(velocity=int(velocity), pitch=int(pitch), start=start, end=end)
+            piano.notes.append(note)
 
         track.instruments.append(piano)
 
