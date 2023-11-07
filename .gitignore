@@ -4,3 +4,4 @@ tmp/
 *.egg-info/
 dist/
 *.pyc
+*.ipynb

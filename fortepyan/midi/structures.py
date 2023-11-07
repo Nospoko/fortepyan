@@ -56,7 +56,7 @@ class MidiPiece:
         """Trim the MidiPiece object between the specified start and finish time.
 
         This function takes two parameters, `start` and `finish`, which represent the start and end time in seconds,
-        and returns a new MidiPiece object that contains only the notes within the specified time range.
+        and returns a new MidiPiece object that contains only the notes that start within the specified time range.
 
         Args:
         - start (float): start time in seconds
