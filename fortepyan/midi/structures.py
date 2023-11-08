@@ -1,3 +1,4 @@
+from warnings import showwarning
 from dataclasses import field, dataclass
 
 import numpy as np
@@ -30,6 +31,10 @@ class MidiPiece:
             self.df["end"] = self.df["start"] + self.df["duration"]
         elif "duration" not in self.df.columns:
             self.df["duration"] = self.df["end"] - self.df["start"]
+
+        # Convert timing columns to float to ensure consistency
+        for col in timing_columns:
+            self.df[col] = self.df[col].astype(float)
 
         # Check for the absolutely required columns: 'pitch' and 'velocity'
         if "pitch" not in self.df.columns:
@@ -108,6 +113,35 @@ class MidiPiece:
         out = MidiPiece(df=part, source=out_source)
 
         return out
+
+    def __add__(self, other: "MidiPiece") -> "MidiPiece":
+        if not isinstance(other, MidiPiece):
+            raise TypeError("You can only add MidiPiece objects to other MidiPiece objects.")
+
+        # Adjust the start/end times of the second piece
+        other.df.start += self.end
+        other.df.end += self.end
+
+        # Concatenate the two pieces
+        df = pd.concat([self.df, other.df], ignore_index=True)
+
+        # make sure the other piece is not modified
+        other.df.start -= self.end
+        other.df.end -= self.end
+
+        # make sure that start and end times are floats
+        df.start = df.start.astype(float)
+        df.end = df.end.astype(float)
+
+        out = MidiPiece(df=df)
+
+        # Show warning as the piece might not be musically valid.
+        showwarning("The resulting piece may not be musically valid.", UserWarning, "fortepyan", lineno=1)
+
+        return out
+
+    def __len__(self) -> int:
+        return self.size
 
     @property
     def duration(self) -> float:

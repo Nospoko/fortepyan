@@ -9,7 +9,7 @@ from fortepyan.midi.structures import MidiPiece
 def sample_df():
     df = pd.DataFrame(
         {
-            "start": [0, 1, 2, 3, 4],
+            "start": [0.0, 1, 2, 3, 4],
             "end": [1, 2, 3, 4, 5.5],
             "duration": [1, 1, 1, 1, 1.5],
             "pitch": [60, 62, 64, 65, 67],
@@ -114,3 +114,57 @@ def test_to_midi(sample_midi_piece):
     midi_end_time = midi_track.get_end_time()
 
     assert midi_end_time == expected_end_time, f"MIDI end time {midi_end_time} does not match expected {expected_end_time}"
+
+
+def test_add_two_midi_pieces(sample_midi_piece):
+    # Create a second MidiPiece to add to the sample one
+    df2 = pd.DataFrame(
+        {
+            "start": [0, 1, 2],
+            "end": [1, 2, 3],
+            "duration": [1, 1, 1],
+            "pitch": [70, 72, 74],
+            "velocity": [80, 80, 80],
+        }
+    )
+    midi_piece2 = MidiPiece(df=df2)
+
+    # Add the two pieces together
+    combined_piece = sample_midi_piece + midi_piece2
+
+    # Check that the resulting piece has the correct number of notes
+    assert len(combined_piece) == len(sample_midi_piece) + len(midi_piece2)
+
+    # Check if duration has been adjusted
+    assert combined_piece.duration == sample_midi_piece.duration + midi_piece2.duration
+
+
+def test_add_non_midi_piece(sample_midi_piece):
+    # Try to add a non-MidiPiece object to a MidiPiece
+    with pytest.raises(TypeError):
+        _ = sample_midi_piece + "not a MidiPiece"
+
+
+def test_add_does_not_modify_originals(sample_midi_piece):
+    # Create a second MidiPiece to add to the sample one
+    df2 = pd.DataFrame(
+        {
+            "start": [0, 1, 2],
+            "end": [1, 2, 3],
+            "duration": [1, 1, 1],
+            "pitch": [70, 72, 74],
+            "velocity": [80, 80, 80],
+        }
+    )
+    midi_piece2 = MidiPiece(df=df2)
+
+    # Store the original dataframes for comparison
+    original_df1 = sample_midi_piece.df.copy()
+    original_df2 = midi_piece2.df.copy()
+
+    # Add the two pieces together
+    _ = sample_midi_piece + midi_piece2
+
+    # Check that the original pieces have not been modified
+    pd.testing.assert_frame_equal(sample_midi_piece.df, original_df1)
+    pd.testing.assert_frame_equal(midi_piece2.df, original_df2)
