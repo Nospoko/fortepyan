@@ -57,7 +57,7 @@ class MidiPiece:
         self.df.start += shift_s
         self.df.end += shift_s
 
-    def trim(self, start: float, finish: float) -> "MidiPiece":
+    def trim(self, start: float, finish: float, shift_time: bool = True) -> "MidiPiece":
         """Trim the MidiPiece object between the specified start and finish time.
 
         This function takes two parameters, `start` and `finish`, which represent the start and end time in seconds,
@@ -78,9 +78,11 @@ class MidiPiece:
         # Get the start and end indices for the new MidiPiece object
         start = idxs[0]
         finish = idxs[-1] + 1
+        # Create a slice object to pass to __getitem__
+        slice_obj = slice(start, finish)
         # Slice the original MidiPiece object to create the trimmed MidiPiece object
-        out = self[start:finish]
-        # Return the trimmed MidiPiece object
+        out = self.__getitem__(slice_obj, shift_time)
+
         return out
 
     def __sanitize_get_index(self, index: slice) -> slice:
@@ -97,19 +99,26 @@ class MidiPiece:
 
         return index
 
-    def __getitem__(self, index: slice) -> "MidiPiece":
+    def __getitem__(self, index: slice, shift_time: bool = True) -> "MidiPiece":
         index = self.__sanitize_get_index(index)
         part = self.df[index].reset_index(drop=True)
 
-        first_sound = part.start.min()
-        part.start -= first_sound
-        part.end -= first_sound
+        if shift_time:
+            # Shift the start and end times so that the first note starts at 0
+            first_sound = part.start.min()
+            part.start -= first_sound
+            part.end -= first_sound
+            # Adjust the source to reflect the new start time
+            start_time_adjustment = first_sound
+        else:
+            # No adjustment to the start time
+            start_time_adjustment = 0
 
-        # Make sure the piece can always be track back to the original file exactly
+        # Make sure the piece can always be tracked back to the original file exactly
         out_source = dict(self.source)
         out_source["start"] = self.source.get("start", 0) + index.start
         out_source["finish"] = self.source.get("start", 0) + index.stop
-        out_source["start_time"] = self.source.get("start_time", 0) + first_sound
+        out_source["start_time"] = self.source.get("start_time", 0) + start_time_adjustment
         out = MidiPiece(df=part, source=out_source)
 
         return out

@@ -73,7 +73,7 @@ def test_midi_piece_duration_calculation(sample_df):
     assert piece.duration == 5.5
 
 
-def test_trim_within_bounds(sample_midi_piece):
+def test_trim_within_bounds_with_shift(sample_midi_piece):
     # Test currently works as in the original code.
     # We might want to change this behavior so that
     # we do not treat the trimed piece as a new piece
@@ -82,6 +82,16 @@ def test_trim_within_bounds(sample_midi_piece):
     assert trimmed_piece.df["start"].iloc[0] == 0, "New first note should start at 0 seconds."
     assert trimmed_piece.df["pitch"].iloc[0] == 64, "New first note should have pitch 64."
     assert trimmed_piece.df["end"].iloc[-1] == 2, "New last note should end at 2 seconds."
+
+
+def test_trim_within_bounds_no_shift(sample_midi_piece):
+    # This test should not shift the start times
+    trimmed_piece = sample_midi_piece.trim(2, 3, shift_time=False)
+    assert len(trimmed_piece.df) == 2, "Trimmed MidiPiece should contain 2 notes."
+    # Since we're not shifting, the start should not be 0 but the actual start time
+    assert trimmed_piece.df["start"].iloc[0] == 2, "First note should retain its original start time."
+    assert trimmed_piece.df["pitch"].iloc[0] == 64, "First note should have pitch 64."
+    assert trimmed_piece.df["end"].iloc[-1] == 4, "Last note should end at 4 seconds."
 
 
 def test_trim_at_boundaries(sample_midi_piece):
