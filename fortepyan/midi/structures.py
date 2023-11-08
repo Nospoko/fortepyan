@@ -57,30 +57,47 @@ class MidiPiece:
         self.df.start += shift_s
         self.df.end += shift_s
 
-    def trim(self, start: float, finish: float, shift_time: bool = True) -> "MidiPiece":
-        """Trim the MidiPiece object between the specified start and finish time.
-
-        This function takes two parameters, `start` and `finish`, which represent the start and end time in seconds,
-        and returns a new MidiPiece object that contains only the notes that start within the specified time range.
+    def trim(self, start: float, finish: float, shift_time: bool = True, slice_type: str = "standard") -> "MidiPiece":
+        """
+        Trim the MidiPiece object based on a specified slicing type.
 
         Args:
-        - start (float): start time in seconds
-        - finish (float): end time in seconds
+        - start (float): Depending on `slice_type`, this is either the start time in seconds or the start index.
+        - finish (float): Depending on `slice_type`, this is either the end time in seconds or the end index.
+        - shift_time (bool, optional): If True, the trimmed piece's start time will be shifted to 0. Defaults to True.
+        - slice_type (str, optional): Determines the slicing method ('standard', 'by_end', 'index'). Defaults to "standard".
+            - "standard": Slices the MidiPiece to include notes that start within the [start, finish] time range.
+            - "by_end": Slices the MidiPiece to include notes where the end time is within the [start, finish] time range.
+            - "index": Slices the MidiPiece by note indices, where start and finish must be integer indices.
 
         Returns:
-        - MidiPiece: the trimmed MidiPiece object
+        - MidiPiece: The trimmed MidiPiece object.
         """
-        # Filter the rows in the data frame that are within the specified start and end time
-        ids = (self.df.start >= start) & (self.df.start <= finish)
-        # Get the indices of the rows that meet the criteria
-        idxs = np.where(ids)[0]
+        if slice_type == "index":
+            if not isinstance(start, int) or not isinstance(finish, int):
+                raise ValueError("Using 'index' slice_type requires 'start' and 'finish' to be integers.")
+            if start < 0 or finish >= self.size:
+                raise IndexError("Index out of bounds.")
+            if start > finish:
+                raise ValueError("'start' must be smaller than 'finish'.")
+            start_idx = start
+            finish_idx = finish + 1
+        else:
+            if slice_type == "by_end":
+                ids = (self.df.start >= start) & (self.df.end <= finish)
+            elif slice_type == "standard":  # Standard slice type
+                ids = (self.df.start >= start) & (self.df.start <= finish)
+            else:
+                # not implemented
+                raise NotImplementedError(f"Slice type '{slice_type}' is not implemented.")
+            idx = np.where(ids)[0]
+            if len(idx) == 0:
+                raise IndexError("No notes found in the specified range.")
+            start_idx = idx[0]
+            finish_idx = idx[-1] + 1
 
-        # Get the start and end indices for the new MidiPiece object
-        start = idxs[0]
-        finish = idxs[-1] + 1
-        # Create a slice object to pass to __getitem__
-        slice_obj = slice(start, finish)
-        # Slice the original MidiPiece object to create the trimmed MidiPiece object
+        slice_obj = slice(start_idx, finish_idx)
+
         out = self.__getitem__(slice_obj, shift_time)
 
         return out

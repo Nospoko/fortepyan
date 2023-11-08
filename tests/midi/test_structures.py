@@ -84,6 +84,28 @@ def test_trim_within_bounds_with_shift(sample_midi_piece):
     assert trimmed_piece.df["end"].iloc[-1] == 2, "New last note should end at 2 seconds."
 
 
+def test_trim_index_slice_type(sample_midi_piece):
+    trimmed_piece = sample_midi_piece.trim(1, 3, slice_type="index")
+    assert len(trimmed_piece) == 3, "Trimmed MidiPiece should contain 3 notes."
+    assert trimmed_piece.df["start"].iloc[0] == 0, "New first note should start at 0 seconds."
+    assert trimmed_piece.df["pitch"].iloc[0] == 62, "New first note should have pitch 62."
+    assert trimmed_piece.df["end"].iloc[-1] == 3, "New last note should end at 3 seconds."
+
+
+def test_trim_by_end_slice_type(sample_midi_piece):
+    trimmed_piece = sample_midi_piece.trim(1, 5, slice_type="by_end")
+    assert len(trimmed_piece.df) == 3, "Trimmed MidiPiece should contain 3 notes."
+    assert trimmed_piece.df["start"].iloc[0] == 0, "New first note should start at 0 seconds."
+    assert trimmed_piece.df["pitch"].iloc[0] == 62, "New first note should have pitch 62."
+    assert trimmed_piece.df["end"].iloc[-1] == 3, "New last note should end at 2 seconds."
+    assert trimmed_piece.df["pitch"].iloc[-1] == 65, "New last note should have pitch 65."
+
+
+def test_trim_with_invalid_slice_type(sample_midi_piece):
+    with pytest.raises(NotImplementedError):
+        _ = sample_midi_piece.trim(1, 3, slice_type="invalid")  # Invalid slice type, should raise an error
+
+
 def test_trim_within_bounds_no_shift(sample_midi_piece):
     # This test should not shift the start times
     trimmed_piece = sample_midi_piece.trim(2, 3, shift_time=False)
