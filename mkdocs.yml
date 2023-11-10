@@ -1,0 +1,13 @@
+# mkdocs.yml
+site_name: Fortepyan
+
+theme:
+  name: "material"
+
+nav:
+  - Home: index.md
+  - reference.md
+
+plugins:
+  - search
+  - mkdocstrings
