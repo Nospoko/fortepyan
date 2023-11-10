@@ -2,11 +2,43 @@
 site_name: Fortepyan
 
 theme:
-  name: "material"
+  name: material
+  language: en
+  font:
+    text: Roboto
+    code: JetBrains Mono # Might change it to Roboto Mono
+  icon:
+    logo: material/piano
+  palette:
+
+    # Palette toggle for light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: green
+      accent: deep orange
+      toggle:
+        icon: material/eye
+        name: Switch to dark mode
+
+    # Palette toggle for dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: green
+      accent: deep orange
+      toggle:
+        icon: material/eye-outline
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.expand
+    - search.suggest
+    - search.highlight
 
 nav:
-  - Home: index.md
-  - reference.md
+  - Home:
+    - Welcome to Fortepyan: index.md
+  - Documentation:
+    - Midi Dataclass: documentation/midi_classes.md
 
 plugins:
   - search
