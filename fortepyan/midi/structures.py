@@ -129,6 +129,9 @@ class MidiPiece:
             Trimming with time shift disabled:
             >>> midi_piece.trim(start=1.0, finish=5.0, shift_time=False)
 
+            An example of a trimmed MIDI piece:
+            ![Trimmed MIDI piece](../assets/random_midi_piece.png)
+
         """
         if slice_type == "index":
             if not isinstance(start, int) or not isinstance(finish, int):
