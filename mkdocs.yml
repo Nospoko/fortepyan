@@ -1,5 +1,7 @@
 # mkdocs.yml
 site_name: Fortepyan
+repo_url: https://github.com/Nospoko/fortepyan
+repo_name: Fortepyan
 
 theme:
   name: material
@@ -33,6 +35,7 @@ theme:
     - navigation.expand
     - search.suggest
     - search.highlight
+    - content.action.edit
 
 nav:
   - Home:
