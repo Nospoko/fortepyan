@@ -36,13 +36,26 @@ theme:
     - search.suggest
     - search.highlight
     - content.action.edit
+    - content.code.copy
 
 nav:
   - Home:
     - Welcome to Fortepyan: index.md
   - Documentation:
     - Midi Dataclass: documentation/midi_classes.md
+  - Examples:
+    - Visualizations: examples/visualizations.md
+
 
 plugins:
   - search
   - mkdocstrings
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
