@@ -16,14 +16,14 @@ def prepare_atepp_records(df: pd.DataFrame, atepp_midi_folder: str) -> list[dict
     records = []
     for it, row in df.iterrows():
         path = os.path.join(atepp_midi_folder, row.midi_path)
-        record = row[columns].to_dict() | {"path": path}
+        record = row[columns].to_dict() | {"path": path, "dataset": "atepp-1.1"}
         records.append(record)
 
     return records
 
 
 def main():
-    atepp_midi_folder = "tmp/atepp/"
+    atepp_midi_folder = download_atepp_midi()
     meta_path = os.path.join(atepp_midi_folder, "ATEPP-metadata-1.1.csv")
     df = pd.read_csv(meta_path)
 
@@ -65,5 +65,5 @@ def download_atepp_midi():
 
 
 if __name__ == "__main__":
-    main()
+    # main()
     main_sustain()

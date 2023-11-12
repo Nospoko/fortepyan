@@ -23,7 +23,7 @@ def main():
     records = prepare_records(paths)
     dataset = Dataset.from_list(records)
 
-    dataset_name = "roszcz/giant-midi-base"
+    dataset_name = "roszcz/giant-midi-base-v2"
 
     dataset.push_to_hub(repo_id=dataset_name, token=C.HF_TOKEN, split="train")
 
@@ -39,6 +39,19 @@ def download_giant_midi():
     return giant_midi_root
 
 
+def decode_filename(name: str) -> dict:
+    parts = name.split(",")
+    first_name = parts[1]
+    second_name = parts[0]
+    artist = f"{first_name} {second_name}"
+    decoded = dict(
+        artist=artist,
+        title=" ".join(parts[2:-2]),
+        youtube_id=parts[-1].split(".")[0],
+    )
+    return decoded
+
+
 def prepare_records(paths: list[str]):
     records = []
     for path in tqdm(paths):
@@ -52,10 +65,11 @@ def prepare_records(paths: list[str]):
                     "time": [c.time for c in cc],
                 }
             )
+            source = decode_filename(path.name) | {"dataset": "giant-midi"}
             record = {
                 "notes": mf.df,
                 "control_changes": cc_frame,
-                "midi_filename": path.name,
+                "source": source,
             }
             records.append(record)
         except Exception as e:
@@ -67,9 +81,9 @@ def prepare_records(paths: list[str]):
 
 
 def main_sustain():
-    new_dataset_name = "roszcz/giant-midi-sustain"
+    new_dataset_name = "roszcz/giant-midi-sustain-v2"
 
-    dataset_name = "roszcz/giant-midi-base"
+    dataset_name = "roszcz/giant-midi-base-v2"
     dataset = load_dataset(dataset_name, split="train")
 
     fn_kwargs = {"sustain_threshold": 62}

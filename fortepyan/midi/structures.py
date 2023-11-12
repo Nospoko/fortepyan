@@ -1,3 +1,4 @@
+import json
 from dataclasses import field, dataclass
 
 import numpy as np
@@ -130,13 +131,7 @@ class MidiPiece:
         df = pd.DataFrame(record["notes"])
         df["duration"] = df.end - df.start
 
-        source = {
-            "composer": record.get("composer"),
-            "title": record.get("title"),
-            "midi_filename": record.get("midi_filename"),
-            "record_id": record.get("record_id"),
-            "user": record.get("user"),
-        }
+        source = json.loads(record["source"])
         that = cls(df=df, source=source)
         return that
 
