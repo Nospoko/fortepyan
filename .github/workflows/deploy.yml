@@ -22,7 +22,7 @@ jobs:
     - name: Extract version
       id: get_version
       run: |
-        echo "PACKAGE_VERSION=$(grep "version=" setup.py | cut -d"'" -f2)" >> $GITHUB_ENV
+        echo "PACKAGE_VERSION=$(bumpver show -n | grep -oP 'Current Version: \K.*')" >> $GITHUB_ENV
 
     - name: Build and publish
       env:
