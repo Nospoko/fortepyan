@@ -1,0 +1,61 @@
+# mkdocs.yml
+site_name: Fortepyan
+repo_url: https://github.com/Nospoko/fortepyan
+repo_name: Fortepyan
+
+theme:
+  name: material
+  language: en
+  font:
+    text: Roboto
+    code: JetBrains Mono # Might change it to Roboto Mono
+  icon:
+    logo: material/piano
+  palette:
+
+    # Palette toggle for light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: green
+      accent: deep orange
+      toggle:
+        icon: material/eye
+        name: Switch to dark mode
+
+    # Palette toggle for dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: green
+      accent: deep orange
+      toggle:
+        icon: material/eye-outline
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.expand
+    - search.suggest
+    - search.highlight
+    - content.action.edit
+    - content.code.copy
+
+nav:
+  - Home:
+    - Welcome to Fortepyan: index.md
+  - Documentation:
+    - Midi Dataclass: documentation/midi_classes.md
+  - Examples:
+    - Visualizations: examples/visualizations.md
+
+
+plugins:
+  - search
+  - mkdocstrings
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
