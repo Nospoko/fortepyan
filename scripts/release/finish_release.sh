@@ -6,5 +6,5 @@ git flow release finish -m "$RELEASE_MESSAGE"
 
 # I suppose we can make it fully automatic.
 git push origin develop
-git push origin main
+git push origin master
 git push --tags
