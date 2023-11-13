@@ -31,9 +31,9 @@ pre-commit run --all-files
 
 Package release:
 ```sh
-# use patch/minor/major
-bumpver update --patch
-
-python -m build
-twine upload -r pypi dist/*
+# from the root directory with clean working tree
+# replace patch with one of: [major, minor, patch]
+./scripts/release/start_release.sh patch
+# Make any additional changes to the release commit
+./scripts/release/finish_release.sh
 ```
