@@ -43,6 +43,7 @@ nav:
     - Welcome to Fortepyan: index.md
   - Documentation:
     - Midi Dataclass: documentation/midi_classes.md
+    - Rendering: documentation/rendering.md
   - Examples:
     - Visualizations: examples/visualizations.md
 
