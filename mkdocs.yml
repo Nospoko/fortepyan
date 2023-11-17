@@ -44,6 +44,7 @@ nav:
   - Documentation:
     - Midi Dataclass: documentation/midi_classes.md
     - Rendering: documentation/rendering.md
+    - Sustain: documentation/sustain.md
   - Examples:
     - Visualizations: examples/visualizations.md
 
