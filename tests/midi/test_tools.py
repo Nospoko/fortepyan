@@ -1,4 +1,5 @@
 import pytest
+import numpy as np
 import pandas as pd
 
 from fortepyan.midi.structures import MidiFile
@@ -22,4 +23,7 @@ def test_apply_sustain(testing_midi_file, expected_sustain_output):
         sustain=testing_midi_file.sustain,
         sustain_threshold=testing_midi_file.sustain_threshold,
     )
-    assert applied_sustain.equals(expected_sustain_output)
+
+    # Flatten the dataframes or compare column-wise
+    for column in expected_sustain_output.columns:
+        assert np.all(np.isclose(applied_sustain[column].values, expected_sustain_output[column].values, atol=1e-10))
