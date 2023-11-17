@@ -3,6 +3,7 @@ site_name: Fortepyan
 repo_url: https://github.com/Nospoko/fortepyan
 repo_name: Fortepyan
 
+
 theme:
   name: material
   language: en
@@ -16,7 +17,7 @@ theme:
     # Palette toggle for light mode
     - media: "(prefers-color-scheme: light)"
       scheme: default
-      primary: green
+      primary: 1c394a
       accent: deep orange
       toggle:
         icon: material/eye
@@ -25,7 +26,7 @@ theme:
     # Palette toggle for dark mode
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
-      primary: green
+      primary: 368BBA
       accent: deep orange
       toggle:
         icon: material/eye-outline
@@ -48,7 +49,7 @@ nav:
   - Examples:
     - Visualizations: examples/visualizations.md
 
-
+extra_css: [assets/extra.css]
 plugins:
   - search
   - mkdocstrings
