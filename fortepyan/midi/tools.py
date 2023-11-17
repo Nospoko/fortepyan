@@ -46,9 +46,9 @@ def sustain_notes(
 
     # Select notes affected by current sustain pedal down event
     ids = (df.end >= pedal_down) & (df.end < pedal_up)
-    affeced_notes = df[ids]
+    affected_notes = df[ids]
 
-    for it, row in affeced_notes.iterrows():
+    for it, row in affected_notes.iterrows():
         # Get the rows in the DataFrame that correspond to the same pitch
         # as the current row, and that start after the current row
         jds = (df.pitch == row.pitch) & (df.start > row.start)
