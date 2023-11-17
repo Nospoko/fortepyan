@@ -67,7 +67,7 @@ def midi_to_mp3(midi: Union[pretty_midi.PrettyMIDI, MidiPiece], mp3_path: str = 
             The path where the converted MP3 file will be saved. If not specified, a temporary file is created.
 
     Returns:
-        str: The path to the created MP3 file.
+        mp3_path (str): The path to the created MP3 file.
 
     Note:
         If a `MidiPiece` object is provided, it is first converted to a `pretty_midi.PrettyMIDI` object
