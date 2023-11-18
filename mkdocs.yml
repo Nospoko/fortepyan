@@ -13,7 +13,6 @@ theme:
   icon:
     logo: material/piano
   palette:
-
     # Palette toggle for light mode
     - media: "(prefers-color-scheme: light)"
       scheme: default
@@ -46,6 +45,7 @@ nav:
     - Midi Dataclass: documentation/midi_classes.md
     - Rendering: documentation/rendering.md
     - Sustain: documentation/sustain.md
+    - Visualizations: documentation/visualization.md
   - Examples:
     - Visualizations: examples/visualizations.md
 
