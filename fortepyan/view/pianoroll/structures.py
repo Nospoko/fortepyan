@@ -1,4 +1,5 @@
 from typing import Union
+from warnings import showwarning
 from dataclasses import field, dataclass
 
 import matplotlib
@@ -12,6 +13,30 @@ from fortepyan.midi.structures import MidiPiece
 
 @dataclass
 class PianoRoll:
+    """
+    Represents a piano roll visualization of a MIDI piece.
+
+    The PianoRoll class provides a visual representation of MIDI data as a traditional piano roll,
+    which is often used in music software. This representation includes the ability to mark the current time,
+    set start and end times for the visualization, and dynamically build the piano roll image based on the MIDI data.
+
+    Attributes:
+        midi_piece (MidiPiece): The MIDI piece to be visualized.
+        current_time (float, optional): The current time position in the MIDI piece.
+        time_start (float): The start time for the piano roll visualization.
+        time_end (float, optional): The end time for the piano roll visualization.
+        roll (np.array): The numpy array representing the piano roll image.
+        RESOLUTION (int): The resolution of the piano roll image.
+        N_PITCHES (int): The number of pitches to be represented in the piano roll.
+
+    Methods:
+        __post_init__(): Initializes the piano roll image and tick preparations.
+        lowest_pitch(): Returns the lowest pitch present in the MIDI piece.
+        highest_pitch(): Returns the highest pitch present in the MIDI piece.
+        _build_image(): Builds the piano roll image from the MIDI data.
+        _prepare_ticks(): Prepares the tick marks and labels for the piano roll visualization.
+    """
+
     midi_piece: MidiPiece
     current_time: float = None
     time_start: float = 0.0
@@ -96,6 +121,23 @@ class PianoRoll:
 
 @dataclass
 class DualPianoRoll(PianoRoll):
+    """
+    Extends the PianoRoll class to represent a dual-layer piano roll visualization.
+
+    The DualPianoRoll class enhances the basic piano roll visualization by allowing for the
+    representation of additional information, such as masking in machine learning contexts, through
+    the use of dual color mapping.
+
+    Attributes:
+        base_cmap (Union[str, ListedColormap]): The colormap for the base layer of the piano roll.
+        marked_cmap (Union[str, ListedColormap]): The colormap for the marked layer of the piano roll.
+        mark_key (str): The key used to determine markings in the MIDI data.
+
+    Methods:
+        __post_init__(): Initializes the dual-layer piano roll with specified colormaps.
+        _build_image(): Builds the dual-layer piano roll image from the MIDI data, applying color mappings.
+    """
+
     base_cmap: Union[str, ListedColormap] = cm.devon_r
     marked_cmap: Union[str, ListedColormap] = "RdPu"
     mark_key: str = "mask"
@@ -121,7 +163,7 @@ class DualPianoRoll(PianoRoll):
             self.time_end = np.ceil(df.end.max())
 
         if self.time_end < df.end.max():
-            print("Warning, piano roll is not showing everything!")
+            showwarning("Warning, piano roll is not showing everything!", UserWarning, "pianoroll.py", 164)
 
         # duration = time_end - time_start
         self.duration = self.time_end
@@ -170,6 +212,20 @@ class DualPianoRoll(PianoRoll):
 
 @dataclass
 class FigureResolution:
+    """
+    Represents the resolution configuration for a figure.
+
+    Attributes:
+        w_pixels (int): The width of the figure in pixels.
+        h_pixels (int): The height of the figure in pixels.
+        dpi (int): The dots per inch (resolution) of the figure.
+
+    Properties:
+        w_inches (float): The width of the figure in inches, calculated from pixels and dpi.
+        h_inches (float): The height of the figure in inches, calculated from pixels and dpi.
+        figsize (tuple[float, float]): The size of the figure as a tuple of width and height in inches.
+    """
+
     w_pixels: int = 1920 // 2
     h_pixels: int = 1080 // 2
     dpi: int = 72
