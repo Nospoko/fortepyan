@@ -16,7 +16,7 @@ theme:
     # Palette toggle for light mode
     - media: "(prefers-color-scheme: light)"
       scheme: default
-      primary: 1c394a
+      primary: anything
       accent: deep orange
       toggle:
         icon: material/eye
@@ -25,7 +25,7 @@ theme:
     # Palette toggle for dark mode
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
-      primary: 368BBA
+      primary: anything
       accent: deep orange
       toggle:
         icon: material/eye-outline
@@ -49,7 +49,8 @@ nav:
   - Examples:
     - Visualizations: examples/visualizations.md
 
-extra_css: [assets/extra.css]
+extra_css:
+  - assets/extra.css
 plugins:
   - search
   - mkdocstrings
