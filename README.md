@@ -1,4 +1,5 @@
-# fortepyan :musical_keyboard:
+# Fortepyan :musical_keyboard:
+![GitHub CI](https://github.com/Nospoko/Fortepyan/actions/workflows/ci_tests.yaml/badge.svg?branch=master) [![PyPI version](https://img.shields.io/pypi/v/fortepyan.svg)](https://pypi.org/project/fortepyan/) [![PyPI download month](https://img.shields.io/pypi/dm/fortepyan.svg)](https://pypi.org/project/fortepyan/)
 
 ### Usage
 
