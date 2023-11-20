@@ -1,7 +1,9 @@
 name: Docs CI
 on:
-  pull_request:
-    branches: [develop]
+  push:
+    branches:
+      - master
+
 permissions:
   contents: write
 jobs:
