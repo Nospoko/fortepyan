@@ -403,7 +403,7 @@ class MidiFile:
     sustain: pd.DataFrame = field(init=False)
     control_frame: pd.DataFrame = field(init=False, repr=False)
     _midi: pretty_midi.PrettyMIDI = field(init=False, repr=False)
-    _instruments: list = field(init=False, repr=False)
+    instruments: list = field(init=False, repr=False)
 
     def __rich_repr__(self):
         yield "MidiFile"
@@ -414,25 +414,25 @@ class MidiFile:
 
     @property
     def duration(self) -> float:
-        return self._midi.get_end_time()
+        return self.get_end_time()
 
     @property
     def notes(self):
         # This is not great/foolproof, but we already have files
         # where the piano track is present on multiple "programs"/"instruments
-        notes = sum([inst.notes for inst in self._midi.instruments], [])
+        notes = sum([inst.notes for inst in self.instruments], [])
         return notes
 
     @property
     def control_changes(self):
         # See the note for notes ^^
-        ccs = sum([inst.control_changes for inst in self._midi.instruments], [])
+        ccs = sum([inst.control_changes for inst in self.instruments], [])
         return ccs
 
     def __post_init__(self):
         # Read the MIDI object
         midi_data = mido.MidiFile(filename=self.path)
-        self._midi = pretty_midi.PrettyMIDI(self.path)  # TODO remove this
+        # self._midi = pretty_midi.PrettyMIDI(self.path)  # TODO remove this
 
         # Convert tick values in midi_data to absolute, a useful thing.
         for track in midi_data.tracks:
@@ -742,6 +742,29 @@ class MidiFile:
             # Convert tick scale to a tempo
             tempi[n] = 60.0 / (tick_scale * self.resolution)
         return tempo_change_times, tempi
+
+    def get_end_time(self):
+        """Returns the time of the end of the MIDI object (time of the last
+        event in all instruments/meta-events).
+
+        Returns
+        -------
+        end_time : float
+            Time, in seconds, where this MIDI file ends.
+
+        """
+        # Get end times from all instruments, and times of all meta-events
+        meta_events = [self.time_signature_changes, self.key_signature_changes, self.lyrics, self.text_events]
+        times = (
+            [i.get_end_time() for i in self.instruments]
+            + [e.time for m in meta_events for e in m]
+            + self.get_tempo_changes()[0].tolist()
+        )
+        # If there are no events, return 0
+        if len(times) == 0:
+            return 0.0
+        else:
+            return max(times)
 
     @property
     def piece(self) -> MidiPiece:
