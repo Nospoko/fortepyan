@@ -1,11 +1,15 @@
 from warnings import showwarning
 from dataclasses import field, dataclass
 
+import mido
 import numpy as np
 import pretty_midi
 import pandas as pd
 
 from fortepyan.midi import tools as midi_tools
+
+# The largest we'd ever expect a tick to be
+MAX_TICK = 1e7
 
 
 @dataclass
@@ -392,11 +396,13 @@ class MidiFile:
     path: str
     apply_sustain: bool = True
     sustain_threshold: int = 62
+    resolution: int = field(init=False)
     df: pd.DataFrame = field(init=False)
     raw_df: pd.DataFrame = field(init=False)
     sustain: pd.DataFrame = field(init=False)
     control_frame: pd.DataFrame = field(init=False, repr=False)
     _midi: pretty_midi.PrettyMIDI = field(init=False, repr=False)
+    _instruments: list = field(init=False, repr=False)
 
     def __rich_repr__(self):
         yield "MidiFile"
@@ -424,8 +430,49 @@ class MidiFile:
 
     def __post_init__(self):
         # Read the MIDI object
-        self._midi = pretty_midi.PrettyMIDI(self.path)
+        midi_data = mido.MidiFile(filename=self.path)
+        self._midi = pretty_midi.PrettyMIDI(self.path)  # TODO remove this
 
+        # Convert tick values in midi_data to absolute, a useful thing.
+        for track in midi_data.tracks:
+            tick = 0
+            for event in track:
+                event.time += tick
+                tick = event.time
+
+        # Store the resolution for later use
+        self.resolution = midi_data.ticks_per_beat
+
+        # Populate the list of tempo changes (tick scales)
+        self._load_tempo_changes(midi_data)
+
+        # Update the array which maps ticks to time
+        max_tick = max([max([e.time for e in t]) for t in midi_data.tracks]) + 1
+        # If max_tick is too big, the MIDI file is probably corrupt
+        # and creating the __tick_to_time array will thrash memory
+        if max_tick > MAX_TICK:
+            raise ValueError(("MIDI file has a largest tick of {}," " it is likely corrupt".format(max_tick)))
+
+        # Create list that maps ticks to time in seconds
+        self._update_tick_to_time(max_tick)
+
+        # Check that there are tempo, key and time change events
+        # only on track 0
+        if any(e.type in ("set_tempo", "key_signature", "time_signature") for track in midi_data.tracks[1:] for e in track):
+            showwarning(
+                "Tempo, Key or Time signature change events found on "
+                "non-zero tracks.  This is not a valid type 0 or type 1 "
+                "MIDI file.  Tempo, Key or Time Signature may be wrong.",
+                RuntimeWarning,
+                "fortepyan",
+                lineno=1,
+            )
+
+        # Populate the list of instruments
+        self._load_instruments(midi_data)
+
+        # TODO: change according to the new structure
+        # MIDIFILE FUNCTIONS BELOW
         # Extract CC data
         self.control_frame = pd.DataFrame(
             {
@@ -461,30 +508,30 @@ class MidiFile:
 
     def __getitem__(self, index: slice) -> MidiPiece:
         return self.piece[index]
-        if not isinstance(index, slice):
-            raise TypeError("You can only get a part of MidiFile that has multiple notes: Index must be a slice")
+        # if not isinstance(index, slice):
+        #     raise TypeError("You can only get a part of MidiFile that has multiple notes: Index must be a slice")
 
-        part = self.df[index].reset_index(drop=True)
-        first_sound = part.start.min()
+        # part = self.df[index].reset_index(drop=True)
+        # first_sound = part.start.min()
 
-        # TODO: When you start working with pedal data, add this to the Piece structure
-        if not self.apply_sustain:
-            # +0.2 to make sure we get some sustain data at the end to ring out
-            ids = (self.sustain.time >= part.start.min()) & (self.sustain.time <= part.end.max() + 0.2)
-            sustain_part = self.sustain[ids].reset_index(drop=True)
-            sustain_part.time -= first_sound
+        # # TODO: When you start working with pedal data, add this to the Piece structure
+        # if not self.apply_sustain:
+        #     # +0.2 to make sure we get some sustain data at the end to ring out
+        #     ids = (self.sustain.time >= part.start.min()) & (self.sustain.time <= part.end.max() + 0.2)
+        #     sustain_part = self.sustain[ids].reset_index(drop=True)
+        #     sustain_part.time -= first_sound
 
-        # Move the notes
-        part.start -= first_sound
-        part.end -= first_sound
+        # # Move the notes
+        # part.start -= first_sound
+        # part.end -= first_sound
 
-        source = {
-            "type": "MidiFile",
-            "path": self.path,
-        }
-        out = MidiPiece(df=part, source=source)
+        # source = {
+        #     "type": "MidiFile",
+        #     "path": self.path,
+        # }
+        # out = MidiPiece(df=part, source=source)
 
-        return out
+        # return out
 
     @property
     def piece(self) -> MidiPiece:
@@ -530,6 +577,9 @@ class Note(object):
         start (float): Note on time, absolute, in seconds.
         end (float): Note off time, absolute, in seconds.
 
+    Notes:
+        It's a container class used to store a note. Adapted from [pretty_midi](https://github.com/craffel/pretty-midi).
+
     """
 
     def __init__(self, velocity, pitch, start, end):
@@ -564,6 +614,8 @@ class ControlChange(object):
         value (int): The value of the control change, in ``[0, 127]``.
         time (float): Time where the control change occurs.
 
+    Notes:
+        It's a container class used to store a control change. Adapted from [pretty_midi](https://github.com/craffel/pretty-midi).
     """
 
     def __init__(self, number, value, time):
