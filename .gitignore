@@ -5,3 +5,4 @@ tmp/
 dist/
 *.pyc
 *.ipynb
+venv/
