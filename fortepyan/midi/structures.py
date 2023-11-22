@@ -402,7 +402,6 @@ class MidiFile:
     raw_df: pd.DataFrame = field(init=False)
     sustain: pd.DataFrame = field(init=False)
     control_frame: pd.DataFrame = field(init=False, repr=False)
-    _midi: pretty_midi.PrettyMIDI = field(init=False, repr=False)
     instruments: list = field(init=False, repr=False)
 
     def __rich_repr__(self):
@@ -432,7 +431,6 @@ class MidiFile:
     def __post_init__(self):
         # Read the MIDI object
         midi_data = mido.MidiFile(filename=self.path)
-        # self._midi = pretty_midi.PrettyMIDI(self.path)  # TODO remove this
 
         # Convert tick values in midi_data to absolute, a useful thing.
         for track in midi_data.tracks:
