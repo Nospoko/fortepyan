@@ -1,7 +1,6 @@
 from warnings import showwarning
 from dataclasses import field, dataclass
 
-import mido
 import numpy as np
 import pretty_midi
 import pandas as pd
@@ -397,7 +396,7 @@ class MidiFile:
     raw_df: pd.DataFrame = field(init=False)
     sustain: pd.DataFrame = field(init=False)
     control_frame: pd.DataFrame = field(init=False, repr=False)
-    _midi_data: mido.MidiFile = field(init=False, repr=False)
+    _midi: pretty_midi.PrettyMIDI = field(init=False, repr=False)
 
     def __rich_repr__(self):
         yield "MidiFile"
@@ -407,9 +406,8 @@ class MidiFile:
         yield "minutes", round(self.duration / 60, 2)
 
     @property
-    def duration(self):
-        # Calculate the total duration of the MIDI file
-        return max(msg.time for track in self._midi_data.tracks for msg in track if hasattr(msg, "time"))
+    def duration(self) -> float:
+        return self._midi.get_end_time()
 
     @property
     def notes(self):
@@ -425,52 +423,41 @@ class MidiFile:
         return ccs
 
     def __post_init__(self):
-        # Load the MIDI file
-        self._midi_data = mido.MidiFile(self.path)
+        # Read the MIDI object
+        self._midi = pretty_midi.PrettyMIDI(self.path)
 
-        # Extract notes and control changes
-        notes, control_changes = self._extract_notes_and_controls()
-
-        # Create dataframes for notes and control changes
-        self._create_dataframes(notes, control_changes)
+        # Extract CC data
+        self.control_frame = pd.DataFrame(
+            {
+                "time": [cc.time for cc in self.control_changes],
+                "value": [cc.value for cc in self.control_changes],
+                "number": [cc.number for cc in self.control_changes],
+            }
+        )
 
         # Sustain CC is 64
         ids = self.control_frame.number == 64
         self.sustain = self.control_frame[ids].reset_index(drop=True)
 
-        # Apply sustain if needed
+        # Extract notes
+        raw_df = pd.DataFrame(
+            {
+                "pitch": [note.pitch for note in self.notes],
+                "velocity": [note.velocity for note in self.notes],
+                "start": [note.start for note in self.notes],
+                "end": [note.end for note in self.notes],
+            }
+        )
+        self.raw_df = raw_df.sort_values("start", ignore_index=True)
+
         if self.apply_sustain:
-            self.df = self._apply_sustain()
+            self.df = midi_tools.apply_sustain(
+                df=self.raw_df,
+                sustain=self.sustain,
+                sustain_threshold=self.sustain_threshold,
+            )
         else:
             self.df = self.raw_df
-
-    def _extract_notes_and_controls(self):
-        notes = []
-        control_changes = []
-        current_time = 0
-
-        for track in self._midi_data.tracks:
-            for msg in track:
-                current_time += msg.time
-                if msg.type == "note_on" and msg.velocity > 0:
-                    notes.append({"pitch": msg.note, "start": current_time, "velocity": msg.velocity})
-                elif msg.type == "note_off" or (msg.type == "note_on" and msg.velocity == 0):
-                    notes.append({"pitch": msg.note, "end": current_time})
-                elif msg.type == "control_change":
-                    control_changes.append({"time": current_time, "value": msg.value, "number": msg.control})
-
-        return notes, control_changes
-
-    def _create_dataframes(self, notes, control_changes):
-        self.raw_df = pd.DataFrame(notes)
-        self.control_frame = pd.DataFrame(control_changes)
-
-    def _apply_sustain(self):
-        self.df = midi_tools.apply_sustain(
-            df=self.raw_df,
-            sustain=self.sustain,
-            sustain_threshold=self.sustain_threshold,
-        )
 
     def __getitem__(self, index: slice) -> MidiPiece:
         return self.piece[index]
@@ -510,3 +497,79 @@ class MidiFile:
             source=source,
         )
         return out
+
+
+# Container classes from PrettyMIDI
+class Instrument(object):
+    """Object to hold event information for a single instrument.
+
+    Parameters:
+        program (int): MIDI program number (instrument index), in ``[0, 127]``.
+        is_drum (bool, optinal): Is the instrument a drum instrument (channel 9)?
+        name (str, optional): Name of the instrument.
+
+    Notes:
+        It's a container class used to store notes, and control changes. Adapted from [pretty_midi](https://github.com/craffel/pretty-midi).
+
+    """
+
+    def __init__(self, program, is_drum=False, name=""):
+        self.program = program
+        self.is_drum = is_drum
+        self.name = name
+        self.notes = []
+        self.control_changes = []
+
+
+class Note(object):
+    """A note event.
+
+    Parameters:
+        velocity (int): Note velocity.
+        pitch (int): Note pitch, as a MIDI note number.
+        start (float): Note on time, absolute, in seconds.
+        end (float): Note off time, absolute, in seconds.
+
+    """
+
+    def __init__(self, velocity, pitch, start, end):
+        if end < start:
+            raise ValueError("Note end time must be greater than start time")
+
+        self.velocity = velocity
+        self.pitch = pitch
+        self.start = start
+        self.end = end
+
+    def get_duration(self):
+        """
+        Get the duration of the note in seconds.
+        """
+        return self.end - self.start
+
+    @property
+    def duration(self):
+        return self.get_duration()
+
+    def __repr__(self):
+        return "Note(start={:f}, end={:f}, pitch={}, velocity={})".format(self.start, self.end, self.pitch, self.velocity)
+
+
+class ControlChange(object):
+    """
+    A control change event.
+
+    Parameters:
+        number (int): The control change number, in ``[0, 127]``.
+        value (int): The value of the control change, in ``[0, 127]``.
+        time (float): Time where the control change occurs.
+
+    """
+
+    def __init__(self, number, value, time):
+        self.number = number
+        self.value = value
+        self.time = time
+
+    def __repr__(self):
+        return "ControlChange(number={:d}, value={:d}, " "time={:f})".format(self.number, self.value, self.time)
