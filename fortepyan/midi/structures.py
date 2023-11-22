@@ -1,3 +1,4 @@
+import collections
 from warnings import showwarning
 from dataclasses import field, dataclass
 
@@ -532,6 +533,215 @@ class MidiFile:
         # out = MidiPiece(df=part, source=source)
 
         # return out
+
+    def _load_tempo_changes(self, midi_data):
+        """
+        Populates `self._tick_scales` with tuples of
+        `(tick, tick_scale)` loaded from `midi_data`.
+
+        Parameters:
+        midi_data (midi.FileReader): MIDI object from which data will be read.
+        """
+
+        # MIDI data is given in "ticks".
+        # We need to convert this to clock seconds.
+        # The conversion factor involves the BPM, which may change over time.
+        # So, create a list of tuples, (time, tempo)
+        # denoting a tempo change at a certain time.
+        # By default, set the tempo to 120 bpm, starting at time 0
+        self._tick_scales = [(0, 60.0 / (120.0 * self.resolution))]
+        # For SMF file type 0, all events are on track 0.
+        # For type 1, all tempo events should be on track 1.
+        # Everyone ignores type 2. >>> :'(
+        # So, just look at events on track 0
+        for event in midi_data.tracks[0]:
+            if event.type == "set_tempo":
+                # Only allow one tempo change event at the beginning
+                if event.time == 0:
+                    bpm = 6e7 / event.tempo
+                    self._tick_scales = [(0, 60.0 / (bpm * self.resolution))]
+                else:
+                    # Get time and BPM up to this point
+                    _, last_tick_scale = self._tick_scales[-1]
+                    tick_scale = 60.0 / ((6e7 / event.tempo) * self.resolution)
+                    # Ignore repetition of BPM, which happens often
+                    if tick_scale != last_tick_scale:
+                        self._tick_scales.append((event.time, tick_scale))
+
+    def _update_tick_to_time(self, max_tick):
+        """
+        Creates ``self.__tick_to_time``, a class member array which maps
+        ticks to time starting from tick 0 and ending at ``max_tick``.
+        """
+        # If max_tick is smaller than the largest tick in self._tick_scales,
+        # use this largest tick instead
+        max_scale_tick = max(ts[0] for ts in self._tick_scales)
+        max_tick = max_tick if max_tick > max_scale_tick else max_scale_tick
+        # Allocate tick to time array - indexed by tick from 0 to max_tick
+        self.__tick_to_time = np.zeros(max_tick + 1)
+        # Keep track of the end time of the last tick in the previous interval
+        last_end_time = 0
+        # Cycle through intervals of different tempi
+        for (start_tick, tick_scale), (end_tick, _) in zip(self._tick_scales[:-1], self._tick_scales[1:]):
+            # Convert ticks in this interval to times
+            ticks = np.arange(end_tick - start_tick + 1)
+            self.__tick_to_time[start_tick : end_tick + 1] = last_end_time + tick_scale * ticks
+            # Update the time of the last tick in this interval
+            last_end_time = self.__tick_to_time[end_tick]
+        # For the final interval, use the final tempo setting
+        # and ticks from the final tempo setting until max_tick
+        start_tick, tick_scale = self._tick_scales[-1]
+        ticks = np.arange(max_tick + 1 - start_tick)
+        self.__tick_to_time[start_tick:] = last_end_time + tick_scale * ticks
+
+    def _load_instruments(self, midi_data):
+        """Populates ``self.instruments`` using ``midi_data``.
+
+        Parameters
+        ----------
+        midi_data : midi.FileReader
+            MIDI object from which data will be read.
+        """
+        # MIDI files can contain a collection of tracks; each track can have
+        # events occuring on one of sixteen channels, and events can correspond
+        # to different instruments according to the most recently occurring
+        # program number.  So, we need a way to keep track of which instrument
+        # is playing on each track on each channel.  This dict will map from
+        # program number, drum/not drum, channel, and track index to instrument
+        # indices, which we will retrieve/populate using the __get_instrument
+        # function below.
+        instrument_map = collections.OrderedDict()
+        # Store a similar mapping to instruments storing "straggler events",
+        # e.g. events which appear before we want to initialize an Instrument
+        stragglers = {}
+        # This dict will map track indices to any track names encountered
+        track_name_map = collections.defaultdict(str)
+
+        def __get_instrument(program, channel, track, create_new):
+            """Gets the Instrument corresponding to the given program number,
+            drum/non-drum type, channel, and track index.  If no such
+            instrument exists, one is created.
+
+            """
+            # If we have already created an instrument for this program
+            # number/track/channel, return it
+            if (program, channel, track) in instrument_map:
+                return instrument_map[(program, channel, track)]
+            # If there's a straggler instrument for this instrument and we
+            # aren't being requested to create a new instrument
+            if not create_new and (channel, track) in stragglers:
+                return stragglers[(channel, track)]
+            # If we are told to, create a new instrument and store it
+            if create_new:
+                is_drum = channel == 9
+                instrument = Instrument(program, is_drum, track_name_map[track_idx])
+                # If any events appeared for this instrument before now,
+                # include them in the new instrument
+                if (channel, track) in stragglers:
+                    straggler = stragglers[(channel, track)]
+                    instrument.control_changes = straggler.control_changes
+                    instrument.pitch_bends = straggler.pitch_bends
+                # Add the instrument to the instrument map
+                instrument_map[(program, channel, track)] = instrument
+            # Otherwise, create a "straggler" instrument which holds events
+            # which appear before we actually want to create a proper new
+            # instrument
+            else:
+                # Create a "straggler" instrument
+                instrument = Instrument(program, track_name_map[track_idx])
+                # Note that stragglers ignores program number, because we want
+                # to store all events on a track which appear before the first
+                # note-on, regardless of program
+                stragglers[(channel, track)] = instrument
+            return instrument
+
+        for track_idx, track in enumerate(midi_data.tracks):
+            # Keep track of last note on location:
+            # key = (instrument, note),
+            # value = (note-on tick, velocity)
+            last_note_on = collections.defaultdict(list)
+            # Keep track of which instrument is playing in each channel
+            # initialize to program 0 for all channels
+            current_instrument = np.zeros(16, dtype=np.int32)
+            for event in track:
+                # Look for track name events
+                if event.type == "track_name":
+                    # Set the track name for the current track
+                    track_name_map[track_idx] = event.name
+                # Look for program change events
+                if event.type == "program_change":
+                    # Update the instrument for this channel
+                    current_instrument[event.channel] = event.program
+                # Note ons are note on events with velocity > 0
+                elif event.type == "note_on" and event.velocity > 0:
+                    # Store this as the last note-on location
+                    note_on_index = (event.channel, event.note)
+                    last_note_on[note_on_index].append((event.time, event.velocity))
+                # Note offs can also be note on events with 0 velocity
+                elif event.type == "note_off" or (event.type == "note_on" and event.velocity == 0):
+                    # Check that a note-on exists (ignore spurious note-offs)
+                    key = (event.channel, event.note)
+                    if key in last_note_on:
+                        # Get the start/stop times and velocity of every note
+                        # which was turned on with this instrument/drum/pitch.
+                        # One note-off may close multiple note-on events from
+                        # previous ticks. In case there's a note-off and then
+                        # note-on at the same tick we keep the open note from
+                        # this tick.
+                        end_tick = event.time
+                        open_notes = last_note_on[key]
+
+                        notes_to_close = [(start_tick, velocity) for start_tick, velocity in open_notes if start_tick != end_tick]
+                        notes_to_keep = [(start_tick, velocity) for start_tick, velocity in open_notes if start_tick == end_tick]
+
+                        for start_tick, velocity in notes_to_close:
+                            start_time = self.__tick_to_time[start_tick]
+                            end_time = self.__tick_to_time[end_tick]
+                            # Create the note event
+                            note = Note(velocity, event.note, start_time, end_time)
+                            # Get the program and drum type for the current
+                            # instrument
+                            program = current_instrument[event.channel]
+                            # Retrieve the Instrument instance for the current
+                            # instrument
+                            # Create a new instrument if none exists
+                            instrument = __get_instrument(program, event.channel, track_idx, 1)
+                            # Add the note event
+                            instrument.notes.append(note)
+
+                        if len(notes_to_close) > 0 and len(notes_to_keep) > 0:
+                            # Note-on on the same tick but we already closed
+                            # some previous notes -> it will continue, keep it.
+                            last_note_on[key] = notes_to_keep
+                        else:
+                            # Remove the last note on for this instrument
+                            del last_note_on[key]
+                # Store control changes
+                elif event.type == "control_change":
+                    control_change = ControlChange(event.control, event.value, self.__tick_to_time[event.time])
+                    # Get the program for the current inst
+                    program = current_instrument[event.channel]
+                    # Retrieve the Instrument instance for the current inst
+                    # Don't create a new instrument if none exists
+                    instrument = __get_instrument(program, event.channel, track_idx, 0)
+                    # Add the control change event
+                    instrument.control_changes.append(control_change)
+        # Initialize list of instruments from instrument_map
+        self.instruments = [i for i in instrument_map.values()]
+
+    def get_tempo_changes(self):
+        """Return arrays of tempo changes in quarter notes-per-minute and their
+        times.
+        """
+        # Pre-allocate return arrays
+        tempo_change_times = np.zeros(len(self._tick_scales))
+        tempi = np.zeros(len(self._tick_scales))
+        for n, (tick, tick_scale) in enumerate(self._tick_scales):
+            # Convert tick of this tempo change to time in seconds
+            tempo_change_times[n] = self.tick_to_time(tick)
+            # Convert tick scale to a tempo
+            tempi[n] = 60.0 / (tick_scale * self.resolution)
+        return tempo_change_times, tempi
 
     @property
     def piece(self) -> MidiPiece:
