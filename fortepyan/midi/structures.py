@@ -10,7 +10,7 @@ import pandas as pd
 from fortepyan.midi import tools as midi_tools
 
 # The largest we'd ever expect a tick to be
-MAX_TICK = 1e7
+MAX_TICK = 1e10
 
 
 @dataclass
