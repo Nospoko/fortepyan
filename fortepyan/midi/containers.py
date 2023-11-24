@@ -18,6 +18,7 @@ class Instrument(object):
         self.program = program
         self.is_drum = is_drum
         self.name = name
+        self.pitch_bends = []
         self.notes = []
         self.control_changes = []
 
@@ -300,3 +301,23 @@ class TimeSignature(object):
 
     def __str__(self):
         return "{}/{} at {:.2f} seconds".format(self.numerator, self.denominator, self.time)
+
+
+class PitchBend(object):
+    """
+    A pitch bend event.
+
+    Parameters:
+        pitch (int)
+            MIDI pitch bend amount, in the range ``[-8192, 8191]``.
+        time (float)
+            Time where the pitch bend occurs.
+
+    """
+
+    def __init__(self, pitch, time):
+        self.pitch = pitch
+        self.time = time
+
+    def __repr__(self):
+        return "PitchBend(pitch={:d}, time={:f})".format(self.pitch, self.time)
