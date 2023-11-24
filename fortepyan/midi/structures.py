@@ -1,4 +1,3 @@
-import re
 import collections
 from heapq import merge
 from warnings import showwarning
@@ -10,6 +9,8 @@ import pretty_midi
 import pandas as pd
 
 from fortepyan.midi import tools as midi_tools
+from fortepyan.midi import containers as midi_containers
+from fortepyan.midi.containers import key_name_to_key_number
 
 # The largest we'd ever expect a tick to be
 MAX_TICK = 1e10
@@ -594,11 +595,11 @@ class MidiFile:
 
         for event in midi_data.tracks[0]:
             if event.type == "key_signature":
-                key_obj = KeySignature(key_name_to_key_number(event.key), self.__tick_to_time[event.time])
+                key_obj = midi_containers.KeySignature(key_name_to_key_number(event.key), self.__tick_to_time[event.time])
                 self.key_signature_changes.append(key_obj)
 
             elif event.type == "time_signature":
-                ts_obj = TimeSignature(event.numerator, event.denominator, self.__tick_to_time[event.time])
+                ts_obj = midi_containers.TimeSignature(event.numerator, event.denominator, self.__tick_to_time[event.time])
                 self.time_signature_changes.append(ts_obj)
 
         # We search for lyrics and text events on all tracks
@@ -611,9 +612,9 @@ class MidiFile:
             text_events = []
             for event in track:
                 if event.type == "lyrics":
-                    lyrics.append(Lyric(event.text, self.__tick_to_time[event.time]))
+                    lyrics.append(midi_containers.Lyric(event.text, self.__tick_to_time[event.time]))
                 elif event.type == "text":
-                    text_events.append(Text(event.text, self.__tick_to_time[event.time]))
+                    text_events.append(midi_containers.Text(event.text, self.__tick_to_time[event.time]))
 
             if lyrics:
                 tracks_with_lyrics.append(lyrics)
@@ -690,7 +691,7 @@ class MidiFile:
             # If we are told to, create a new instrument and store it
             if create_new:
                 is_drum = channel == 9
-                instrument = Instrument(program, is_drum, track_name_map[track_idx])
+                instrument = midi_containers.Instrument(program, is_drum, track_name_map[track_idx])
                 # If any events appeared for this instrument before now,
                 # include them in the new instrument
                 if (channel, track) in stragglers:
@@ -704,7 +705,7 @@ class MidiFile:
             # instrument
             else:
                 # Create a "straggler" instrument
-                instrument = Instrument(program, track_name_map[track_idx])
+                instrument = midi_containers.Instrument(program, track_name_map[track_idx])
                 # Note that stragglers ignores program number, because we want
                 # to store all events on a track which appear before the first
                 # note-on, regardless of program
@@ -754,7 +755,7 @@ class MidiFile:
                             start_time = self.__tick_to_time[start_tick]
                             end_time = self.__tick_to_time[end_tick]
                             # Create the note event
-                            note = Note(velocity, event.note, start_time, end_time)
+                            note = midi_containers.Note(velocity, event.note, start_time, end_time)
                             # Get the program and drum type for the current
                             # instrument
                             program = current_instrument[event.channel]
@@ -774,7 +775,7 @@ class MidiFile:
                             del last_note_on[key]
                 # Store control changes
                 elif event.type == "control_change":
-                    control_change = ControlChange(event.control, event.value, self.__tick_to_time[event.time])
+                    control_change = midi_containers.ControlChange(event.control, event.value, self.__tick_to_time[event.time])
                     # Get the program for the current inst
                     program = current_instrument[event.channel]
                     # Retrieve the Instrument instance for the current inst
@@ -786,18 +787,17 @@ class MidiFile:
         self.instruments = [i for i in instrument_map.values()]
 
     def tick_to_time(self, tick):
-        """Converts from an absolute tick to time in seconds using
+        """
+        Converts from an absolute tick to time in seconds using
         ``self.__tick_to_time``.
 
-        Parameters
-        ----------
-        tick : int
-            Absolute tick to convert.
+        Parameters:
+            tick (int):
+                Absolute tick to convert.
 
-        Returns
-        -------
-        time : float
-            Time in seconds of tick.
+        Returns:
+            time (float):
+                Time in seconds of tick.
 
         """
         # Check that the tick isn't too big
@@ -827,13 +827,13 @@ class MidiFile:
         return tempo_change_times, tempi
 
     def get_end_time(self):
-        """Returns the time of the end of the MIDI object (time of the last
+        """
+        Returns the time of the end of the MIDI object (time of the last
         event in all instruments/meta-events).
 
-        Returns
-        -------
-        end_time : float
-            Time, in seconds, where this MIDI file ends.
+        Returns:
+            end_time (float):
+                Time, in seconds, where this MIDI file ends.
 
         """
         # Get end times from all instruments, and times of all meta-events
@@ -862,314 +862,9 @@ class MidiFile:
         return out
 
 
-# Container classes from PrettyMIDI
-class Instrument(object):
-    """Object to hold event information for a single instrument.
+def __repr__(self):
+    return f"MidiFile({self.path})"
 
-    Parameters:
-        program (int): MIDI program number (instrument index), in ``[0, 127]``.
-        is_drum (bool, optinal): Is the instrument a drum instrument (channel 9)?
-        name (str, optional): Name of the instrument.
 
-    Notes:
-        It's a container class used to store notes, and control changes. Adapted from [pretty_midi](https://github.com/craffel/pretty-midi).
-
-    """
-
-    def __init__(self, program, is_drum=False, name=""):
-        self.program = program
-        self.is_drum = is_drum
-        self.name = name
-        self.notes = []
-        self.control_changes = []
-
-    def get_end_time(self):
-        """Returns the time of the end of the events in this instrument.
-
-        Returns
-        -------
-        end_time : float
-            Time, in seconds, of the last event.
-
-        """
-        # Cycle through all note ends and all pitch bends and find the largest
-        events = [n.end for n in self.notes] + [c.time for c in self.control_changes]
-        # If there are no events, just return 0
-        if len(events) == 0:
-            return 0.0
-        else:
-            return max(events)
-
-
-class Note(object):
-    """A note event.
-
-    Parameters:
-        velocity (int): Note velocity.
-        pitch (int): Note pitch, as a MIDI note number.
-        start (float): Note on time, absolute, in seconds.
-        end (float): Note off time, absolute, in seconds.
-
-    Notes:
-        It's a container class used to store a note. Adapted from [pretty_midi](https://github.com/craffel/pretty-midi).
-
-    """
-
-    def __init__(self, velocity, pitch, start, end):
-        if end < start:
-            raise ValueError("Note end time must be greater than start time")
-
-        self.velocity = velocity
-        self.pitch = pitch
-        self.start = start
-        self.end = end
-
-    def get_duration(self):
-        """
-        Get the duration of the note in seconds.
-        """
-        return self.end - self.start
-
-    @property
-    def duration(self):
-        return self.get_duration()
-
-    def __repr__(self):
-        return "Note(start={:f}, end={:f}, pitch={}, velocity={})".format(self.start, self.end, self.pitch, self.velocity)
-
-
-class ControlChange(object):
-    """
-    A control change event.
-
-    Parameters:
-        number (int): The control change number, in ``[0, 127]``.
-        value (int): The value of the control change, in ``[0, 127]``.
-        time (float): Time where the control change occurs.
-
-    Notes:
-        It's a container class used to store a control change. Adapted from [pretty_midi](https://github.com/craffel/pretty-midi).
-    """
-
-    def __init__(self, number, value, time):
-        self.number = number
-        self.value = value
-        self.time = time
-
-    def __repr__(self):
-        return "ControlChange(number={:d}, value={:d}, " "time={:f})".format(self.number, self.value, self.time)
-
-
-class KeySignature(object):
-    """Contains the key signature and the event time in seconds.
-    Only supports major and minor keys.
-
-    Attributes:
-        key_number (int): Key number according to ``[0, 11]`` Major, ``[12, 23]`` minor.
-        For example, 0 is C Major, 12 is C minor.
-        time (float): Time of event in seconds.
-
-    Example:
-    Instantiate a C# minor KeySignature object at 3.14 seconds:
-
-    >>> ks = KeySignature(13, 3.14)
-    >>> print(ks)
-    C# minor at 3.14 seconds
-    """
-
-    def __init__(self, key_number, time):
-        if not all((isinstance(key_number, int), key_number >= 0, key_number < 24)):
-            raise ValueError("{} is not a valid `key_number` type or value".format(key_number))
-        if not (isinstance(time, (int, float)) and time >= 0):
-            raise ValueError("{} is not a valid `time` type or value".format(time))
-
-        self.key_number = key_number
-        self.time = time
-
-    def __repr__(self):
-        return "KeySignature(key_number={}, time={})".format(self.key_number, self.time)
-
-    def __str__(self):
-        return "{} at {:.2f} seconds".format(key_number_to_key_name(self.key_number), self.time)
-
-
-class Lyric(object):
-    """
-    Timestamped lyric text.
-
-    """
-
-    def __init__(self, text, time):
-        self.text = text
-        self.time = time
-
-    def __repr__(self):
-        return 'Lyric(text="{}", time={})'.format(self.text.replace('"', r"\""), self.time)
-
-    def __str__(self):
-        return '"{}" at {:.2f} seconds'.format(self.text, self.time)
-
-
-class Text(object):
-    """
-    Timestamped text event.
-    """
-
-    def __init__(self, text, time):
-        self.text = text
-        self.time = time
-
-    def __repr__(self):
-        return 'Text(text="{}", time={})'.format(self.text.replace('"', r"\""), self.time)
-
-    def __str__(self):
-        return '"{}" at {:.2f} seconds'.format(self.text, self.time)
-
-
-def key_number_to_key_name(key_number):
-    """Convert a key number to a key string.
-
-    Parameters
-    ----------
-    key_number : int
-        Uses pitch classes to represent major and minor keys.
-        For minor keys, adds a 12 offset.
-        For example, C major is 0 and C minor is 12.
-
-    Returns
-    -------
-    key_name : str
-        Key name in the format ``'(root) (mode)'``, e.g. ``'Gb minor'``.
-        Gives preference for keys with flats, with the exception of F#, G# and
-        C# minor.
-    """
-
-    if not isinstance(key_number, int):
-        raise ValueError("`key_number` is not int!")
-    if not ((key_number >= 0) and (key_number < 24)):
-        raise ValueError("`key_number` is larger than 24")
-
-    # preference to keys with flats
-    keys = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"]
-
-    # circle around 12 pitch classes
-    key_idx = key_number % 12
-    mode = key_number // 12
-
-    # check if mode is major or minor
-    if mode == 0:
-        return keys[key_idx] + " Major"
-    elif mode == 1:
-        # preference to C#, F# and G# minor
-        if key_idx in [1, 6, 8]:
-            return keys[key_idx - 1] + "# minor"
-        else:
-            return keys[key_idx] + " minor"
-
-
-def key_name_to_key_number(key_string):
-    """Convert a key name string to key number.
-
-    Parameters
-    ----------
-    key_string : str
-        Format is ``'(root) (mode)'``, where:
-          * ``(root)`` is one of ABCDEFG or abcdefg.  A lowercase root
-            indicates a minor key when no mode string is specified.  Optionally
-            a # for sharp or b for flat can be specified.
-
-          * ``(mode)`` is optionally specified either as one of 'M', 'Maj',
-            'Major', 'maj', or 'major' for major or 'm', 'Min', 'Minor', 'min',
-            'minor' for minor.  If no mode is specified and the root is
-            uppercase, the mode is assumed to be major; if the root is
-            lowercase, the mode is assumed to be minor.
-
-    Returns
-    -------
-    key_number : int
-        Integer representing the key and its mode.  Integers from 0 to 11
-        represent major keys from C to B; 12 to 23 represent minor keys from C
-        to B.
-    """
-    # Create lists of possible mode names (major or minor)
-    major_strs = ["M", "Maj", "Major", "maj", "major"]
-    minor_strs = ["m", "Min", "Minor", "min", "minor"]
-    # Construct regular expression for matching key
-    pattern = re.compile(
-        # Start with any of A-G, a-g
-        "^(?P<key>[ABCDEFGabcdefg])"
-        # Next, look for #, b, or nothing
-        "(?P<flatsharp>[#b]?)"
-        # Allow for a space between key and mode
-        " ?"
-        # Next, look for any of the mode strings
-        "(?P<mode>(?:(?:"
-        +
-        # Next, look for any of the major or minor mode strings
-        ")|(?:".join(major_strs + minor_strs)
-        + "))?)$"
-    )
-    # Match provided key string
-    result = re.match(pattern, key_string)
-    if result is None:
-        raise ValueError("Supplied key {} is not valid.".format(key_string))
-    # Convert result to dictionary
-    result = result.groupdict()
-
-    # Map from key string to pitch class number
-    key_number = {"c": 0, "d": 2, "e": 4, "f": 5, "g": 7, "a": 9, "b": 11}[result["key"].lower()]
-    # Increment or decrement pitch class if a flat or sharp was specified
-    if result["flatsharp"]:
-        if result["flatsharp"] == "#":
-            key_number += 1
-        elif result["flatsharp"] == "b":
-            key_number -= 1
-    # Circle around 12 pitch classes
-    key_number = key_number % 12
-    # Offset if mode is minor, or the key name is lowercase
-    if result["mode"] in minor_strs or (result["key"].islower() and result["mode"] not in major_strs):
-        key_number += 12
-
-    return key_number
-
-
-class TimeSignature(object):
-    """Container for a Time Signature event, which contains the time signature
-    numerator, denominator and the event time in seconds.
-
-    Attributes
-    ----------
-    numerator : int
-        Numerator of time signature.
-    denominator : int
-        Denominator of time signature.
-    time : float
-        Time of event in seconds.
-
-    Examples
-    --------
-    Instantiate a TimeSignature object with 6/8 time signature at 3.14 seconds:
-
-    >>> ts = TimeSignature(6, 8, 3.14)
-    >>> print(ts)
-    6/8 at 3.14 seconds
-
-    """
-
-    def __init__(self, numerator, denominator, time):
-        if not (isinstance(numerator, int) and numerator > 0):
-            raise ValueError("{} is not a valid `numerator` type or value".format(numerator))
-        if not (isinstance(denominator, int) and denominator > 0):
-            raise ValueError("{} is not a valid `denominator` type or value".format(denominator))
-        if not (isinstance(time, (int, float)) and time >= 0):
-            raise ValueError("{} is not a valid `time` type or value".format(time))
-
-        self.numerator = numerator
-        self.denominator = denominator
-        self.time = time
-
-    def __repr__(self):
-        return "TimeSignature(numerator={}, denominator={}, time={})".format(self.numerator, self.denominator, self.time)
-
-    def __str__(self):
-        return "{}/{} at {:.2f} seconds".format(self.numerator, self.denominator, self.time)
+def __str__(self):
+    return f"MidiFile({self.path})"
