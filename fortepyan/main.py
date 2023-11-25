@@ -4,6 +4,8 @@ import pandas as pd
 import matplotlib.patches as patches
 from matplotlib import pyplot as plt
 
+from fortepyan.midi.tools import note_number_to_name
+
 
 def process_midi_file(path: str):
     pm = pretty_midi.PrettyMIDI(path)
@@ -46,7 +48,7 @@ def draw_histograms(pitches, white, black):
     ax.bar(black.keys(), black.values(), color="teal", edgecolor="k")
 
     x_ticks = np.arange(0, 128, 12, dtype=float)
-    pitch_labels = [f"{pretty_midi.note_number_to_name(it)}" for it in x_ticks]
+    pitch_labels = [f"{note_number_to_name(it)}" for it in x_ticks]
     ax.set_xticks(x_ticks)
     ax.set_xticklabels(pitch_labels)
 

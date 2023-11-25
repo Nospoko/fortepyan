@@ -7,7 +7,6 @@ from dataclasses import field, dataclass
 
 import mido
 import numpy as np
-import pretty_midi
 import pandas as pd
 
 from fortepyan.midi import tools as midi_tools
@@ -335,50 +334,9 @@ class MidiPiece:
         df["end"] = df.start + df.duration
         return df
 
-    def to_midi(self, instrument_name: str = "Acoustic Grand Piano") -> pretty_midi.PrettyMIDI:
-        """
-        Converts the note data stored in this object into a MIDI track using the specified instrument.
-
-        This function creates a MIDI track with notes defined by the object's data. It uses the pretty_midi library
-        to construct the track and the notes within it. The instrument used for the MIDI track can be specified,
-        and defaults to "Acoustic Grand Piano" if not provided.
-
-        Args:
-            instrument_name (str, optional):
-                The name of the instrument to be used for the MIDI track. This should be a valid instrument name
-                that can be interpreted by the pretty_midi library. Defaults to "Acoustic Grand Piano". See the note below for more information.
-
-        Returns:
-            pretty_midi.PrettyMIDI:
-                A PrettyMIDI object representing the MIDI track created from the note data. This object can be
-                further manipulated or directly written to a MIDI file.
-
-        Examples:
-            >>> track = my_object.to_midi("Violin")
-            This would create a MIDI track using the notes in 'my_object' with a Violin instrument.
-
-        Note:
-            - See [this wikipedia article](https://en.wikipedia.org/wiki/General_MIDI#Parameter_interpretations) for instrument names
-        """
-        track = pretty_midi.PrettyMIDI()
-        program = pretty_midi.instrument_name_to_program(instrument_name)
-        instrument = pretty_midi.Instrument(program=program, name=instrument_name)
-
-        # Convert the DataFrame to a list of tuples to avoid pandas overhead in the loop
-        note_data = self.df[["velocity", "pitch", "start", "end"]].to_records(index=False)
-
-        # Now we can iterate through this array which is more efficient than DataFrame iterrows
-        for velocity, pitch, start, end in note_data:
-            note = pretty_midi.Note(velocity=int(velocity), pitch=int(pitch), start=start, end=end)
-            instrument.notes.append(note)
-
-        track.instruments.append(instrument)
-
-        return track
-
-    def to_midi_midi_file(self, instrument_name: str = "Acoustic Grand Piano"):
+    def to_midi(self, instrument_name: str = "Piano"):
         track = MidiFile()
-        program = pretty_midi.instrument_name_to_program(instrument_name)
+        program = 0  # 0 is piano
         instrument = midi_containers.Instrument(program=program, name=instrument_name)
 
         note_data = self.df[["velocity", "pitch", "start", "end"]].to_records(index=False)
