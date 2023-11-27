@@ -42,6 +42,7 @@ nav:
   - Home:
     - Welcome to Fortepyan: index.md
   - Documentation:
+    - How to write documentation: documentation/how_to_documentation.md
     - Midi Dataclass: documentation/midi_classes.md
     - Rendering: documentation/rendering.md
     - Sustain: documentation/sustain.md
