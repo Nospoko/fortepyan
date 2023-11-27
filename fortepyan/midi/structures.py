@@ -109,7 +109,7 @@ class MidiPiece:
             finish (float | int): The ending point of the segment. Similar to `start`, it's treated as a float or an integer
                                 depending on the `slice_type`.
             shift_time (bool, optional): Whether to shift note timings in the trimmed segment to start from zero. Default is True.
-            slice_type (str, optional): The method of slicing. Can be 'standard', 'by_end', or 'index'. Default is 'standard'.
+            slice_type (str, optional): The method of slicing. Can be 'standard', 'by_end', or 'index'. Default is 'standard'. See note below.
 
         Returns:
             MidiPiece: A new `MidiPiece` object representing the trimmed segment of the original MIDI piece.
@@ -131,6 +131,15 @@ class MidiPiece:
 
             An example of a trimmed MIDI piece:
             ![Trimmed MIDI piece](../assets/random_midi_piece.png)
+
+        Slice types:
+            The `slice_type` parameter determines how the start and finish parameters are interpreted. It can be one of the following:
+
+                'standard': Trims notes that start outside the [start, finish] range.
+
+                'by_end': Trims notes that end after the finish parameter.
+
+                'index': Trims notes based on their index in the DataFrame. The start and finish parameters are treated as integers
 
         """
         if slice_type == "index":
