@@ -53,7 +53,12 @@ extra_css:
   - assets/extra.css
 plugins:
   - search
-  - mkdocstrings
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            filters:
+              - "^(?!__).*$"
 
 markdown_extensions:
   - pymdownx.highlight:

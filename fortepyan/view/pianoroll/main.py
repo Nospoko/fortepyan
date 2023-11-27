@@ -29,7 +29,7 @@ def draw_pianoroll_with_velocities(
                                               which initiates a default `FigureResolution`.
 
     Returns:
-        plt.Figure: A matplotlib figure object with the pianoroll and velocity plots.
+        fig (plt.Figure): A matplotlib figure object with the pianoroll and velocity plots.
     """
     if not figres:
         figres = FigureResolution()
