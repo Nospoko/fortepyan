@@ -5,10 +5,10 @@ from dataclasses import field, dataclass
 import matplotlib
 import numpy as np
 from cmcrameri import cm
-from pretty_midi import note_number_to_name
 from matplotlib.colors import ListedColormap
 
 from fortepyan.midi.structures import MidiPiece
+from fortepyan.midi.tools import note_number_to_name
 
 
 @dataclass
