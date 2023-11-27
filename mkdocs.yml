@@ -59,6 +59,7 @@ plugins:
           options:
             filters:
               - "^(?!__).*$"
+            show_root_toc_entry: false
 
 markdown_extensions:
   - pymdownx.highlight:
