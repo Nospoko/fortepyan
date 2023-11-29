@@ -161,7 +161,7 @@ def draw_velocities(
         plt.Axes: The modified Matplotlib axis with the velocity plot.
     """
     df = piano_roll.midi_piece.df
-    colormap = matplotlib.cm.get_cmap(cmap)
+    colormap = matplotlib.colormaps.get_cmap(cmap)
     color = colormap(125 / 127)
 
     ax.plot(df.start, df.velocity, "o", ms=7, color=color)
