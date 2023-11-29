@@ -12,6 +12,26 @@ from fortepyan.view.pianoroll.structures import PianoRoll, FigureResolution
 
 
 class PianoRollScene:
+    """
+    A class for creating and managing the scene of a piano roll animation.
+
+    Attributes:
+        piece (MidiPiece): The MIDI piece to be visualized.
+        title (str): Title of the piano roll scene.
+        cmap (str): Color map used for the visualization, default is "GnBu".
+        axes (list): List containing the matplotlib axes for the piano roll and velocity plots.
+        content_dir (Path): Directory path for storing temporary files.
+        frame_paths (list): List of paths where individual frame images are saved.
+        figure (matplotlib.figure.Figure): The matplotlib figure object for the scene.
+        roll_ax (matplotlib.axes.Axes): The axes for the piano roll plot.
+        velocity_ax (matplotlib.axes.Axes): The axes for the velocity plot.
+
+    Args:
+        piece (MidiPiece): The MIDI piece to be visualized.
+        title (str): Title of the piano roll scene.
+        cmap (str, optional): Color map used for the visualization. Defaults to "GnBu".
+    """
+
     def __init__(self, piece: MidiPiece, title: str, cmap: str = "GnBu"):
         self.axes = []
         self.content_dir = Path(tempfile.mkdtemp())
@@ -40,10 +60,22 @@ class PianoRollScene:
         self.axes = [self.roll_ax, self.velocity_ax]
 
     def draw_all_axes(self, time: float) -> None:
+        """
+        Draws both the piano roll and velocity plots at a specified time.
+
+        Args:
+            time (float): The time at which to draw the plots.
+        """
         self.draw_piano_roll(time)
         self.draw_velocities(time)
 
     def draw_piano_roll(self, time: float) -> None:
+        """
+        Draws the piano roll plot at a specified time.
+
+        Args:
+            time (float): The time at which to draw the piano roll.
+        """
         piano_roll = PianoRoll(self.piece, current_time=time)
         roll.draw_piano_roll(
             ax=self.roll_ax,
@@ -54,6 +86,12 @@ class PianoRollScene:
         self.roll_ax.set_title(self.title, fontsize=20)
 
     def draw_velocities(self, time: float) -> None:
+        """
+        Draws the velocity plot at a specified time.
+
+        Args:
+            time (float): The time at which to draw the velocity plot.
+        """
         piano_roll = PianoRoll(self.piece)
         roll.draw_velocities(
             ax=self.velocity_ax,
@@ -68,18 +106,33 @@ class PianoRollScene:
         # Set the x-axis limits to the range of the data
         self.velocity_ax.set_xlim(0, piano_roll.duration)
 
-    def save_frame(self, savepath="tmp/tmp.png"):
+    def save_frame(self, savepath: str = "tmp/tmp.png") -> None:
+        """
+        Saves the current state of the figure to a file.
+
+        Args:
+            savepath (str, optional): Path where the image should be saved. Defaults to "tmp/tmp.png".
+        """
         self.figure.tight_layout()
 
         self.figure.savefig(savepath)
 
         self.clean_figure()
 
-    def clean_figure(self):
+    def clean_figure(self) -> None:
+        """
+        Clears the content of all axes in the figure.
+        """
         for ax in self.axes:
             ax.clear()
 
-    def animate_part(self, part: pd.DataFrame):
+    def animate_part(self, part: pd.DataFrame) -> None:
+        """
+        Animates a part of the MIDI piece.
+
+        Args:
+            part (pd.DataFrame): DataFrame containing time and counter information for frames.
+        """
         for it, row in part.iterrows():
             time = row.time
             frame_counter = int(row.counter)
@@ -89,6 +142,12 @@ class PianoRollScene:
             self.frame_paths.append(savepath)
 
     def draw(self, time: float) -> None:
+        """
+        Prepares the figure for drawing and invokes drawing of all axes for a specific time.
+
+        Args:
+            time (float): The time at which to draw the figure.
+        """
         self.clean_figure()
         self.figure.tight_layout()
         self.draw_all_axes(time)
@@ -114,12 +173,15 @@ class PianoRollScene:
 
         return df
 
-    def render(self, framerate: int = 30) -> None:
+    def render(self, framerate: int = 30) -> Path:
         """
         Render the animation using a single process.
 
-        Parameters:
-            framerate (int): Framerate for the animation (default is 30).
+        Args:
+            framerate (int): Framerate for the animation, defaults to 30.
+
+        Returns:
+            Path: Directory containing the generated animation content.
         """
         df = self.prepare_animation_steps(framerate)
 
@@ -129,12 +191,15 @@ class PianoRollScene:
         # Return the directory containing the generated animation content
         return self.content_dir
 
-    def render_mp(self, framerate: int = 30) -> None:
+    def render_mp(self, framerate: int = 30) -> Path:
         """
-        Render the animation using multi-processing to speed up the process.
+        Renders the animation using multi-processing to speed up the process.
 
-        Parameters:
-            framerate (int): Framerate for the animation (default is 30).
+        Args:
+            framerate (int): Framerate for the animation, defaults to 30.
+
+        Returns:
+            Path: Directory containing the generated animation content.
         """
         df = self.prepare_animation_steps(framerate)
 
