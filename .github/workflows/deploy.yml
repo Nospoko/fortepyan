@@ -37,4 +37,4 @@ jobs:
         DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         PACKAGE_VERSION: ${{ env.PACKAGE_VERSION }}
       run: |
-        curl -H "Content-Type: application/json" -X POST -d "{\"content\": \"A new release: $PACKAGE_VERSION has been uploaded to PyPI: [Check it out!](https://pypi.org/project/fortepyan/)\"}" $DISCORD_WEBHOOK_URL
+        curl -H "Content-Type: application/json" -X POST -d "{\"content\": \"A new release $PACKAGE_VERSION has been uploaded to PyPI: [Check it out!](https://pypi.org/project/fortepyan/)\"}" $DISCORD_WEBHOOK_URL

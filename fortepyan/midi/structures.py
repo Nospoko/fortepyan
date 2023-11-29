@@ -118,7 +118,7 @@ class MidiPiece:
             finish (float | int): The ending point of the segment. Similar to `start`, it's treated as a float or an integer
                                 depending on the `slice_type`.
             shift_time (bool, optional): Whether to shift note timings in the trimmed segment to start from zero. Default is True.
-            slice_type (str, optional): The method of slicing. Can be 'standard', 'by_end', or 'index'. Default is 'standard'.
+            slice_type (str, optional): The method of slicing. Can be 'standard', 'by_end', or 'index'. Default is 'standard'. See note below.
 
         Returns:
             MidiPiece: A new `MidiPiece` object representing the trimmed segment of the original MIDI piece.
@@ -140,6 +140,15 @@ class MidiPiece:
 
             An example of a trimmed MIDI piece:
             ![Trimmed MIDI piece](../assets/random_midi_piece.png)
+
+        Slice types:
+            The `slice_type` parameter determines how the start and finish parameters are interpreted. It can be one of the following:
+
+                'standard': Trims notes that start outside the [start, finish] range.
+
+                'by_end': Trims notes that end after the finish parameter.
+
+                'index': Trims notes based on their index in the DataFrame. The start and finish parameters are treated as integers
 
         """
         if slice_type == "index":
@@ -334,13 +343,33 @@ class MidiPiece:
         df["end"] = df.start + df.duration
         return df
 
-    def to_midi(self, instrument_name: str = "Piano"):
+    def to_midi(self, instrument_name: str = "Piano") -> "MidiFile":
+        """
+        Converts the note data stored in this object into a MIDI track using the specified instrument.
+
+        This function creates a MIDI track with notes defined by the object's data. It uses the MidiFile to construct the track and the notes within it.
+
+        Args:
+            instrument_name (str, optional):
+                The name of the track's instrument. Defaults to "Piano".
+
+        Returns:
+            MidiFile:
+                A MidiFile object representing the MIDI track created from the note data. This object can be
+                further manipulated or directly written to a MIDI file.
+
+        Examples:
+            >>> track = my_object.to_midi("Violin")
+            This would create a MIDI track using the notes in 'my_object' and name it "Violin".
+
+        """
         track = MidiFile()
         program = 0  # 0 is piano
         instrument = midi_containers.Instrument(program=program, name=instrument_name)
 
+        # Convert the DataFrame to a list of tuples to avoid pandas overhead in the loop
         note_data = self.df[["velocity", "pitch", "start", "end"]].to_records(index=False)
-
+        # Now we can iterate through this array which is more efficient than DataFrame iterrows
         for velocity, pitch, start, end in note_data:
             note = midi_containers.Note(velocity=int(velocity), pitch=int(pitch), start=start, end=end)
             instrument.notes.append(note)
