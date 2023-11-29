@@ -7,6 +7,15 @@ from fortepyan import config as C
 
 
 def download_if_needed() -> Path:
+    """
+    Ensures the SoundFont file is downloaded in the user's data directory.
+
+    The function checks for 'soundfont.sf2' in the user's data directory, downloading it if absent.
+    The download URL is sourced from the application's configuration.
+
+    Returns:
+        Path: The path to the SoundFont file.
+    """
     app_name = "fortepyan"
     app_author = "me"
 

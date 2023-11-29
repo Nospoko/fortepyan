@@ -3,6 +3,7 @@ site_name: Fortepyan
 repo_url: https://github.com/Nospoko/fortepyan
 repo_name: Fortepyan
 
+
 theme:
   name: material
   language: en
@@ -12,11 +13,10 @@ theme:
   icon:
     logo: material/piano
   palette:
-
     # Palette toggle for light mode
     - media: "(prefers-color-scheme: light)"
       scheme: default
-      primary: green
+      primary: anything
       accent: deep orange
       toggle:
         icon: material/eye
@@ -25,7 +25,7 @@ theme:
     # Palette toggle for dark mode
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
-      primary: green
+      primary: anything
       accent: deep orange
       toggle:
         icon: material/eye-outline
@@ -42,14 +42,25 @@ nav:
   - Home:
     - Welcome to Fortepyan: index.md
   - Documentation:
+    - How to write documentation: documentation/how_to_documentation.md
     - Midi Dataclass: documentation/midi_classes.md
+    - Rendering: documentation/rendering.md
+    - Sustain: documentation/sustain.md
+    - Visualizations: documentation/visualization.md
   - Examples:
     - Visualizations: examples/visualizations.md
 
-
+extra_css:
+  - assets/extra.css
 plugins:
   - search
-  - mkdocstrings
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            filters:
+              - "^(?!__).*$"
+            show_root_toc_entry: false
 
 markdown_extensions:
   - pymdownx.highlight:

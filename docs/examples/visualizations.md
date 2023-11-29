@@ -5,11 +5,7 @@ As a first example, we will create a random midi piece and display it as a piano
 ``` py title="Getting started"
 import pandas as pd
 import numpy as np
-
 import fortepyan as ff
-
-from matplotlib import pyplot as plt
-from fortepyan.view.pianoroll.main import draw_pianoroll_with_velocities
 
 np.random.seed(42) # Fix the seed for reproducibility
 
@@ -26,10 +22,7 @@ random_midi = ff.MidiPiece(random_df) # Create a MidiPiece object
 
 # Let's assume we're interested in notes 5-24
 interesting_part = random_midi.trim(5, 24, slice_type="index")
-fig = draw_pianoroll_with_velocities(interesting_part)
-
-plt.show()
-
+ff.view.draw_pianoroll_with_velocities(interesting_part)
 ```
 
 The outcome you should expect is:

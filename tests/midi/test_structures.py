@@ -1,7 +1,11 @@
 import pytest
+import numpy as np
 import pandas as pd
 
-from fortepyan.midi.structures import MidiPiece
+from fortepyan.midi.structures import MidiFile, MidiPiece
+
+# constants
+TEST_MIDI_PATH = "tests/resources/test_midi.mid"
 
 
 # Define a single comprehensive fixture
@@ -200,3 +204,82 @@ def test_add_does_not_modify_originals(sample_midi_piece):
     # Check that the original pieces have not been modified
     pd.testing.assert_frame_equal(sample_midi_piece.df, original_df1)
     pd.testing.assert_frame_equal(midi_piece2.df, original_df2)
+
+
+# === Tests for MidiFile ===
+# TODO: fill tests with assertions based on test_midi.mid
+
+
+def test_midi_file_initialization():
+    """
+    Test the initialization of the MidiFile class.
+    """
+    midi_file = MidiFile(path=TEST_MIDI_PATH)
+
+    assert midi_file.path == TEST_MIDI_PATH
+    assert midi_file.apply_sustain is True
+    assert midi_file.sustain_threshold == 62
+
+
+def test_midi_file_duration_property():
+    """
+    Test the 'duration' property.
+    """
+    midi_file = MidiFile(path=TEST_MIDI_PATH)
+    assert isinstance(midi_file.duration, float)
+
+
+def test_midi_file_notes_property():
+    """
+    Test the 'notes' property.
+    """
+    midi_file = MidiFile(path=TEST_MIDI_PATH)
+    notes = midi_file.notes
+    assert isinstance(notes, list)
+
+
+def test_midi_file_control_changes_property():
+    """
+    Test the 'control_changes' property.
+    """
+    midi_file = MidiFile(path=TEST_MIDI_PATH)
+    ccs = midi_file.control_changes
+    assert isinstance(ccs, list)
+
+
+@pytest.mark.parametrize(
+    "index, expected_type",
+    [
+        (slice(0, 10), MidiPiece),
+        # Add more test cases
+    ],
+)
+def test_midi_file_getitem(index, expected_type):
+    """
+    Test the '__getitem__' method.
+    """
+    midi_file = MidiFile(path=TEST_MIDI_PATH)
+    result = midi_file[index]
+    assert isinstance(result, expected_type)
+
+
+def test_midi_file_tempo_changes_method():
+    """
+    Test the 'get_tempo_changes' method.
+    """
+    midi_file = MidiFile(path=TEST_MIDI_PATH)
+    tempos = midi_file.get_tempo_changes()
+    assert isinstance(tempos, tuple)
+    assert all(isinstance(arr, np.ndarray) for arr in tempos)
+
+
+def test_midi_file_end_time_method():
+    """
+    Test the 'get_end_time' method.
+    """
+    midi_file = MidiFile(path=TEST_MIDI_PATH)
+    end_time = midi_file.get_end_time()
+    assert isinstance(end_time, float)
+
+
+# Add more tests for other methods and properties as needed

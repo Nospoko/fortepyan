@@ -5,8 +5,8 @@ import pandas as pd
 
 from fortepyan.audio.render import midi_to_mp3
 from fortepyan.midi.structures import MidiPiece
-from fortepyan.animation import evolution as evolution_animation
 from fortepyan.demo.diffusion import process as diffusion_process
+from fortepyan.view.animation import evolution as evolution_animation
 
 
 def merge_diffused_pieces(pieces: list[MidiPiece]) -> MidiPiece:
