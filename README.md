@@ -1,4 +1,5 @@
-# fortepyan :musical_keyboard:
+# Fortepyan :musical_keyboard:
+![GitHub CI](https://github.com/Nospoko/Fortepyan/actions/workflows/ci_tests.yaml/badge.svg?branch=master) [![Python 3.9](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads) [![PyPI version](https://img.shields.io/pypi/v/fortepyan.svg)](https://pypi.org/project/fortepyan/) [![PyPI download month](https://img.shields.io/pypi/dm/fortepyan.svg)](https://pypi.org/project/fortepyan/)
 
 ### Usage
 
@@ -31,9 +32,9 @@ pre-commit run --all-files
 
 Package release:
 ```sh
-# use patch/minor/major
-bumpver update --patch
-
-python -m build
-twine upload -r pypi dist/*
+# from the root directory with clean working tree
+# replace patch with one of: [major, minor, patch]
+./scripts/release/start_release.sh patch
+# Make any additional changes to the release commit
+./scripts/release/finish_release.sh
 ```

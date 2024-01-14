@@ -1,0 +1,40 @@
+name: Deploy to PyPI
+
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip setuptools wheel twine build
+
+    - name: Extract version
+      id: get_version
+      run: |
+        echo "PACKAGE_VERSION=$(bumpver show -n | grep -oP 'Current Version: \K.*')" >> $GITHUB_ENV
+
+    - name: Build and publish
+      env:
+        PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+      run: |
+        python -m build
+        twine upload --repository pypi dist/* --skip-existing --non-interactive -u __token__ -p $PYPI_API_TOKEN
+
+    - name: Notify Discord
+      if: success()
+      env:
+        DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        PACKAGE_VERSION: ${{ env.PACKAGE_VERSION }}
+      run: |
+        curl -H "Content-Type: application/json" -X POST -d "{\"content\": \"A new release $PACKAGE_VERSION has been uploaded to PyPI: [Check it out!](https://pypi.org/project/fortepyan/)\"}" $DISCORD_WEBHOOK_URL

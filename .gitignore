@@ -3,3 +3,6 @@
 tmp/
 *.egg-info/
 dist/
+*.pyc
+*.ipynb
+venv/
