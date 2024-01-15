@@ -26,7 +26,7 @@ def process_record(record: dict, sustain_threshold: int) -> dict:
 
 
 def main():
-    new_dataset_name = "roszcz/pianofor-ai-sustain"
+    new_dataset_name = "roszcz/pianofor-ai-sustain-v2"
 
     dataset_name = "roszcz/pianofor-ai-base"
     dataset = load_dataset(dataset_name, use_auth_token=C.HF_TOKEN)

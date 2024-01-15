@@ -1,3 +1,4 @@
+import json
 import pandas as pd
 from tqdm import tqdm
 from datasets import Dataset
@@ -19,7 +20,7 @@ def main():
 
     dataset = Dataset.from_list(records)
 
-    dataset_name = "roszcz/pianofor-ai-base"
+    dataset_name = "roszcz/pianofor-ai-base-v2"
 
     dataset.push_to_hub(repo_id=dataset_name, token=C.HF_TOKEN, split="train")
 
@@ -31,26 +32,22 @@ def make_pianoforai_records(
     records = []
 
     for it, row in tqdm(df.iterrows(), total=df.shape[0], desc="Building Piano For AI records"):
-        savepath = f"tmp/pfa-2023-09-18/{row.filename}"
+        savepath = f"tmp/pfa-2024-01-15/{row.filename}"
         try:
             s3_client.download_file(Bucket=bucket, Key=row.key, Filename=savepath)
             mf = MidiFile(savepath, apply_sustain=False)
 
-            cc = mf._midi.instruments[0].control_changes
-            cc_frame = pd.DataFrame(
-                {
-                    "number": [c.number for c in cc],
-                    "value": [c.value for c in cc],
-                    "time": [c.time for c in cc],
-                }
-            )
-            record = {
-                "notes": mf.df,
-                "control_changes": cc_frame,
+            cc_frame = mf.control_frame
+            source = {
                 "midi_filename": row.filename,
                 "record_id": row.record_id,
                 "user_id": row.user_id,
                 "user": row.username,
+            }
+            record = {
+                "notes": mf.df,
+                "control_changes": cc_frame,
+                "source": json.dumps(source),
             }
             records.append(record)
         except Exception as e:
