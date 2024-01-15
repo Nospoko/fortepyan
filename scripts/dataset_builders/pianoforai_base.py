@@ -11,17 +11,18 @@ bucket = "piano-for-ai"
 
 
 def main():
+    # This will download data from PianoRoll
     engine = db.make_engine()
     s3_client = db.make_s3_client()
 
     df = db.get_all_records(engine)
 
-    records = make_pianoforai_records(df, s3_client)
-
+    # Convert that data into HF dataset
+    records = make_pianoforai_records(df=df, s3_client=s3_client)
     dataset = Dataset.from_list(records)
 
+    # Upload
     dataset_name = "roszcz/pianofor-ai-base-v2"
-
     dataset.push_to_hub(repo_id=dataset_name, token=C.HF_TOKEN, split="train")
 
 
@@ -57,3 +58,24 @@ def make_pianoforai_records(
         # os.remove(savepath)
 
     return records
+
+
+def main_sustain():
+    new_dataset_name = "roszcz/pianofor-ai-sustain-v2"
+
+    dataset_name = "roszcz/pianofor-ai-base-v2"
+    dataset = load_dataset(dataset_name, split="train")
+
+    fn_kwargs = {"sustain_threshold": 62}
+    new_dataset = dataset.map(process_record_sustain, fn_kwargs=fn_kwargs, load_from_cache_file=False, num_proc=10)
+    new_dataset = new_dataset.remove_columns("control_changes")
+
+    new_dataset.push_to_hub(
+        repo_id=new_dataset_name,
+        token=C.HF_TOKEN,
+    )
+
+
+if __name == "__main__":
+    main()
+    main_sustain()
