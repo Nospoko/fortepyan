@@ -1,8 +1,8 @@
+import json
 import urllib
 import zipfile
 from pathlib import Path
 
-import pandas as pd
 from tqdm import tqdm
 from datasets import Dataset, load_dataset
 
@@ -57,19 +57,12 @@ def prepare_records(paths: list[str]):
     for path in tqdm(paths):
         try:
             mf = MidiFile(str(path), apply_sustain=False)
-            cc = mf._midi.instruments[0].control_changes
-            cc_frame = pd.DataFrame(
-                {
-                    "number": [c.number for c in cc],
-                    "value": [c.value for c in cc],
-                    "time": [c.time for c in cc],
-                }
-            )
+            cc_frame = mf.control_frame
             source = decode_filename(path.name) | {"dataset": "giant-midi"}
             record = {
                 "notes": mf.df,
                 "control_changes": cc_frame,
-                "source": source,
+                "source": json.dumps(source),
             }
             records.append(record)
         except Exception as e:
