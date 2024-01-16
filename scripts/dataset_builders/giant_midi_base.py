@@ -1,8 +1,8 @@
+import json
 import urllib
 import zipfile
 from pathlib import Path
 
-import pandas as pd
 from tqdm import tqdm
 from datasets import Dataset, load_dataset
 
@@ -23,7 +23,7 @@ def main():
     records = prepare_records(paths)
     dataset = Dataset.from_list(records)
 
-    dataset_name = "roszcz/giant-midi-base"
+    dataset_name = "roszcz/giant-midi-base-v2"
 
     dataset.push_to_hub(repo_id=dataset_name, token=C.HF_TOKEN, split="train")
 
@@ -39,23 +39,30 @@ def download_giant_midi():
     return giant_midi_root
 
 
+def decode_filename(name: str) -> dict:
+    parts = name.split(",")
+    first_name = parts[1]
+    second_name = parts[0]
+    artist = f"{first_name} {second_name}"
+    decoded = dict(
+        artist=artist,
+        title=" ".join(parts[2:-2]),
+        youtube_id=parts[-1].split(".")[0],
+    )
+    return decoded
+
+
 def prepare_records(paths: list[str]):
     records = []
     for path in tqdm(paths):
         try:
             mf = MidiFile(str(path), apply_sustain=False)
-            cc = mf._midi.instruments[0].control_changes
-            cc_frame = pd.DataFrame(
-                {
-                    "number": [c.number for c in cc],
-                    "value": [c.value for c in cc],
-                    "time": [c.time for c in cc],
-                }
-            )
+            cc_frame = mf.control_frame
+            source = decode_filename(path.name) | {"dataset": "giant-midi"}
             record = {
                 "notes": mf.df,
                 "control_changes": cc_frame,
-                "midi_filename": path.name,
+                "source": json.dumps(source),
             }
             records.append(record)
         except Exception as e:
@@ -67,9 +74,9 @@ def prepare_records(paths: list[str]):
 
 
 def main_sustain():
-    new_dataset_name = "roszcz/giant-midi-sustain"
+    new_dataset_name = "roszcz/giant-midi-sustain-v2"
 
-    dataset_name = "roszcz/giant-midi-base"
+    dataset_name = "roszcz/giant-midi-base-v2"
     dataset = load_dataset(dataset_name, split="train")
 
     fn_kwargs = {"sustain_threshold": 62}
