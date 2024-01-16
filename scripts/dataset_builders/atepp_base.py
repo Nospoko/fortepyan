@@ -58,15 +58,15 @@ def main():
     records = prepare_hf_records(atepp_records)
     dataset = Dataset.from_list(records)
 
-    dataset_name = "roszcz/atepp-1.1-base"
+    dataset_name = "roszcz/atepp-1.1-base-v2"
 
     dataset.push_to_hub(repo_id=dataset_name, token=C.HF_TOKEN, split="train")
 
 
 def main_sustain():
-    new_dataset_name = "roszcz/atepp-1.1-sustain"
+    new_dataset_name = "roszcz/atepp-1.1-sustain-v2"
 
-    dataset_name = "roszcz/atepp-1.1-base"
+    dataset_name = "roszcz/atepp-1.1-base-v2"
     dataset = load_dataset(dataset_name, split="train", use_auth_token=C.HF_TOKEN)
 
     fn_kwargs = {"sustain_threshold": 62}
