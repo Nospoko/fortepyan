@@ -1,11 +1,13 @@
 import json
 import pandas as pd
 from tqdm import tqdm
-from datasets import Dataset
+from datasets import Dataset, load_dataset
 
 from fortepyan import MidiFile
 from fortepyan import config as C
 from fortepyan.web import database as db
+
+from scripts.dataset_builders.common import process_record_sustain
 
 bucket = "piano-for-ai"
 
@@ -41,6 +43,7 @@ def make_pianoforai_records(
             cc_frame = mf.control_frame
             source = {
                 "midi_filename": row.filename,
+                "dataset": "piano-for-ai",
                 "record_id": row.record_id,
                 "user_id": row.user_id,
                 "user": row.username,
@@ -73,9 +76,10 @@ def main_sustain():
     new_dataset.push_to_hub(
         repo_id=new_dataset_name,
         token=C.HF_TOKEN,
+        split="train",
     )
 
 
-if __name == "__main__":
+if __name__ == "__main__":
     main()
     main_sustain()
