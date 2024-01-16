@@ -1,12 +1,15 @@
 import os
+import json
 import urllib
 import zipfile
+from tqdm import tqdm
 
 import pandas as pd
 from datasets import Dataset, load_dataset
 
+from fortepyan import MidiFile
 from fortepyan import config as C
-from scripts.dataset_builders.common import prepare_hf_records, process_record_sustain
+from scripts.dataset_builders.common import process_record_sustain
 
 ATEPP_URL = "https://storage.googleapis.com/sacrebleu-development/atepp-1.1.zip"
 
@@ -16,18 +19,41 @@ def prepare_atepp_records(df: pd.DataFrame, atepp_midi_folder: str) -> list[dict
     records = []
     for it, row in df.iterrows():
         path = os.path.join(atepp_midi_folder, row.midi_path)
-        record = row[columns].to_dict() | {"path": path}
+        record = row[columns].to_dict() | {"path": path, "dataset": "atepp-1.1"}
         records.append(record)
 
     return records
 
 
+def prepare_hf_records(records: list[dict]):
+    hf_records = []
+    for record in tqdm(records):
+        path = record.pop("path")
+        try:
+            mf = MidiFile(str(path), apply_sustain=False)
+            cc_frame = mf.control_frame
+
+            source = json.dumps(record)
+            record = {
+                "notes": mf.df,
+                "control_changes": cc_frame,
+                "source": source,
+            }
+            hf_records.append(record)
+        except Exception as e:
+            print("Failed:", path)
+            print(e)
+            print("<++++++++++++>")
+
+    return hf_records
+
+
 def main():
-    atepp_midi_folder = "tmp/atepp/"
+    atepp_midi_folder = download_atepp_midi()
     meta_path = os.path.join(atepp_midi_folder, "ATEPP-metadata-1.1.csv")
     df = pd.read_csv(meta_path)
 
-    atepp_records = prepare_atepp_records(df, atepp_midi_folder)
+    atepp_records = prepare_atepp_records(df=df, atepp_midi_folder=atepp_midi_folder)
 
     records = prepare_hf_records(atepp_records)
     dataset = Dataset.from_list(records)
@@ -65,5 +91,5 @@ def download_atepp_midi():
 
 
 if __name__ == "__main__":
-    main()
+    # main()
     main_sustain()

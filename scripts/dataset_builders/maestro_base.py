@@ -1,12 +1,14 @@
+import json
 import urllib
 import zipfile
 
 import pandas as pd
 from tqdm import tqdm
-from datasets import Dataset
+from datasets import Dataset, load_dataset
 
 from fortepyan import MidiFile
 from fortepyan import config as C
+from scripts.dataset_builders.common import process_record_sustain
 
 MAESTRO_URL = "https://storage.googleapis.com/magentadata/datasets/maestro/v3.0.0/maestro-v3.0.0-midi.zip"
 
@@ -44,14 +46,20 @@ def make_maestro_records(mdf: pd.DataFrame) -> list[dict]:
                 "time": [c.time for c in cc],
             }
         )
-        record = {
-            "notes": mf.df,
-            "control_changes": cc_frame,
+        source = {
             "composer": row.canonical_composer,
             "title": row.canonical_title,
             "split": row.split,
             "year": row.year,
             "midi_filename": row.midi_filename,
+            "dataset": "maestro",
+        }
+        record = {
+            "notes": mf.df,
+            "control_changes": cc_frame,
+            "source": json.dumps(source),
+            # Maestro specific, remove before upload
+            "split": row.split,
         }
         records.append(record)
 
@@ -65,13 +73,35 @@ def main():
     records = make_maestro_records(mdf)
     dataset = Dataset.from_list(records)
 
-    dataset_name = "roszcz/maestro-v1"
+    dataset_name = "roszcz/maestro-base-v2"
 
     for split in ["validation", "test", "train"]:
         dataset_split = dataset.filter(lambda r: r["split"] == split)
         dataset_split = dataset_split.remove_columns("split")
 
         dataset_split.push_to_hub(repo_id=dataset_name, token=C.HF_TOKEN, split=split)
+
+
+def main_sustain():
+    new_dataset_name = "roszcz/maestro-sustain-v2"
+
+    for split in ["test", "validation", "train"]:
+        dataset = load_dataset("roszcz/maestro-base-v2", split=split)
+
+        fn_kwargs = {"sustain_threshold": 62}
+        new_dataset = dataset.map(
+            process_record_sustain,
+            fn_kwargs=fn_kwargs,
+            load_from_cache_file=False,
+            num_proc=8,
+        )
+        new_dataset = new_dataset.remove_columns("control_changes")
+
+        new_dataset.push_to_hub(
+            repo_id=new_dataset_name,
+            token=C.HF_TOKEN,
+            split=split,
+        )
 
 
 if __name__ == "__main__":
