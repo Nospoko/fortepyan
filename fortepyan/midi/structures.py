@@ -348,7 +348,8 @@ class MidiPiece:
         """
         Converts the note data stored in this object into a MIDI track using the specified instrument.
 
-        This function creates a MIDI track with notes defined by the object's data. It uses the MidiFile to construct the track and the notes within it.
+        This function creates a MIDI track with notes defined by the object's data.
+        It uses the MidiFile to construct the track and the notes within it.
 
         Args:
             instrument_name (str, optional):
