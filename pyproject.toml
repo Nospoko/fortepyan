@@ -20,6 +20,7 @@ keywords = ["midi", "music", "piano"]
 dependencies = [
     "appdirs>=1.4.4",
     "boto3",
+    "pandas",
     "midi2audio>=0.1.1",
     "numpy>=1.23.4",
     "pretty-midi>=0.2.9",

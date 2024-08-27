@@ -138,7 +138,7 @@ class DualPianoRoll(PianoRoll):
         _build_image(): Builds the dual-layer piano roll image from the MIDI data, applying color mappings.
     """
 
-    base_cmap: Union[str, ListedColormap] = cm.devon_r
+    base_cmap: Union[str, ListedColormap] = field(default_factory=cm.devon_r)
     marked_cmap: Union[str, ListedColormap] = "RdPu"
     mark_key: str = "mask"
 
