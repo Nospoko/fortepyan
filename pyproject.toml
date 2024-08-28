@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "fortepyan"
-version = "0.2.9"
+version = "0.3.0"
 description = "Process MIDI piano with (almost) no pain"
 readme = "README.md"
 authors = [{ name = "Piano For AI", email = "roszcz+fortepyan@gmail.com" }]
@@ -19,14 +19,11 @@ classifiers = [
 keywords = ["midi", "music", "piano"]
 dependencies = [
     "appdirs>=1.4.4",
-    "boto3",
     "pandas",
     "midi2audio>=0.1.1",
     "numpy>=1.23.4",
     "pretty-midi>=0.2.9",
-    "psycopg2>=2.9.5",
     "pydub>=0.25",
-    "SQLAlchemy>=1.4.45",
     "matplotlib>=3.6.2",
     "Levenshtein>=0.20.9",
     "cmcrameri>=1.5",
@@ -48,7 +45,7 @@ packages = [
 ]
 
 [tool.bumpver]
-current_version = "0.2.9"
+current_version = "0.3.0"
 version_pattern = "MAJOR.MINOR.PATCH"
 commit_message = "bump version {old_version} -> {new_version}"
 commit = false

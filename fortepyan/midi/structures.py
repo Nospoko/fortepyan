@@ -510,6 +510,7 @@ class MidiFile:
                 "number": [cc.number for cc in self.control_changes],
             }
         )
+        # TODO We need all 3 pedals
         # Sustain CC is 64
         ids = self.control_frame.number == 64
         self.sustain = self.control_frame[ids].reset_index(drop=True)
