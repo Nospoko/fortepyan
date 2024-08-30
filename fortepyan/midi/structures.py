@@ -1,11 +1,13 @@
 import json
 import math
+import pathlib
 import functools
 import collections
 from heapq import merge
 from warnings import showwarning
 from dataclasses import field, dataclass
 
+import six
 import mido
 import numpy as np
 import pandas as pd
@@ -926,6 +928,7 @@ class MidiFile:
             filename (str): Path to write .mid file to.
 
         """
+        # TODO argument has to also allow passing an io.Bytes so we can write in-memory
 
         def event_compare(event1, event2):
             """
@@ -1112,8 +1115,13 @@ class MidiFile:
                 event.time -= tick
                 tick += event.time
 
-        # Write it out to a file,
-        mid.save(filename=filename)
+        # Write it out
+        if isinstance(filename, six.string_types) or isinstance(filename, pathlib.PurePath):
+            # If a string or path was given, pass it as the filename
+            mid.save(filename=filename)
+        else:
+            # Otherwise, try passing it in as a file pointer
+            mid.save(file=filename)
 
 
 def __repr__(self):
