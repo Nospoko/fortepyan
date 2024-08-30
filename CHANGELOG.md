@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.3.1] - 2024-08-28
+## [0.3.2] - 2024-08-28
 ### Added
 - possible to write midi to a buffer
 
