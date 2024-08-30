@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.3.1] - 2024-08-28
+### Added
+- possible to write midi to a buffer
+
 ## [0.3.0] - 2024-08-28
 ### Changed
 - remove pianofor.ai helper code
