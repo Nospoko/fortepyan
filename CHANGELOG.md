@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.3.2] - 2024-09-22
+### Added
+- separate dataframe build method for MidiFile
+
 ## [0.3.2] - 2024-08-28
 ### Added
 - possible to write midi to a buffer
