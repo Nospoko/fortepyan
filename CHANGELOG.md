@@ -1,6 +1,10 @@
 # Changelog
 
-## [0.3.2] - 2024-09-22
+## [0.3.4] - 2024-09-22
+### Fixed
+- dataframe build method
+
+## [0.3.3] - 2024-09-22
 ### Added
 - separate dataframe build method for MidiFile
 
