@@ -170,10 +170,12 @@ def key_number_to_key_name(key_number):
     Convert a key number to a key string.
 
     Parameters:
-        key_number (int): Uses pitch classes to represent major and minor keys. For minor keys, adds a 12 offset. For example, C major is 0 and C minor is 12.
+        key_number (int): Uses pitch classes to represent major and minor keys.
+        For minor keys, adds a 12 offset. For example, C major is 0 and C minor is 12.
 
     Returns:
-    key_name (str): Key name in the format ``'(root) (mode)'``, e.g. ``'Gb minor'``. Gives preference for keys with flats, with the exception of F#, G# and C# minor.
+    key_name (str): Key name in the format ``'(root) (mode)'``, e.g. ``'Gb minor'``.
+    Gives preference for keys with flats, with the exception of F#, G# and C# minor.
     """
 
     if not isinstance(key_number, int):
@@ -234,9 +236,8 @@ def key_name_to_key_number(key_string):
         " ?"
         # Next, look for any of the mode strings
         "(?P<mode>(?:(?:"
-        +
         # Next, look for any of the major or minor mode strings
-        ")|(?:".join(major_strs + minor_strs)
+        + ")|(?:".join(major_strs + minor_strs)
         + "))?)$"
     )
     # Match provided key string
