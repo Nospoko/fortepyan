@@ -513,6 +513,10 @@ class MidiFile:
         # Populate the list of instruments
         self._load_instruments(midi_data)
 
+        self._build_dataframes()
+
+    def _build_dataframes(self):
+        # Extract CCs
         self.control_frame = pd.DataFrame(
             {
                 "time": [cc.time for cc in self.control_changes],
@@ -520,14 +524,12 @@ class MidiFile:
                 "number": [cc.number for cc in self.control_changes],
             }
         )
+
         # TODO We need all 3 pedals
         # Sustain CC is 64
         ids = self.control_frame.number == 64
         self.sustain = self.control_frame[ids].reset_index(drop=True)
 
-        self._build_dataframes()
-
-    def _build_dataframes(self):
         # Extract notes
         raw_df = pd.DataFrame(
             {
