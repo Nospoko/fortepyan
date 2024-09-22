@@ -324,7 +324,12 @@ class MidiPiece:
         out = MidiPiece(df=df)
 
         # Show warning as the piece might not be musically valid.
-        showwarning("The resulting piece may not be musically valid.", UserWarning, "fortepyan", lineno=1)
+        showwarning(
+            message="The resulting piece may not be musically valid.",
+            category=UserWarning,
+            filename="fortepyan/midi/structures.py",
+            lineno=280,
+        )
 
         return out
 
@@ -493,13 +498,16 @@ class MidiFile:
         # Check that there are tempo, key and time change events
         # only on track 0
         if any(e.type in ("set_tempo", "key_signature", "time_signature") for track in midi_data.tracks[1:] for e in track):
-            showwarning(
+            message = (
                 "Tempo, Key or Time signature change events found on "
                 "non-zero tracks.  This is not a valid type 0 or type 1 "
-                "MIDI file.  Tempo, Key or Time Signature may be wrong.",
-                RuntimeWarning,
-                "fortepyan",
-                lineno=1,
+                "MIDI file.  Tempo, Key or Time Signature may be wrong."
+            )
+            showwarning(
+                message=message,
+                category=RuntimeWarning,
+                filename="fortepyan/midi/structures.py",
+                lineno=469,
             )
 
         # Populate the list of instruments
@@ -517,6 +525,9 @@ class MidiFile:
         ids = self.control_frame.number == 64
         self.sustain = self.control_frame[ids].reset_index(drop=True)
 
+        self._build_dataframes()
+
+    def _build_dataframes(self):
         # Extract notes
         raw_df = pd.DataFrame(
             {
@@ -967,13 +978,16 @@ class MidiFile:
             # to determine their ordering.
             if event1.time == event2.time and event1.type in secondary_sort and event2.type in secondary_sort:
                 return secondary_sort[event1.type](event1) - secondary_sort[event2.type](event2)
+
             # Otherwise, just return the difference of their ticks.
             return event1.time - event2.time
 
         # Initialize output MIDI object
         mid = mido.MidiFile(ticks_per_beat=self.resolution)
+
         # Create track 0 with timing information
         timing_track = mido.MidiTrack()
+
         # Add a default time signature only if there is not one at time 0.
         add_ts = True
         if self.time_signature_changes:
@@ -992,11 +1006,15 @@ class MidiFile:
                     tempo=int(6e7 / (60.0 / (tick_scale * self.resolution))),
                 )
             )
+
         # Add in each time signature
         for ts in self.time_signature_changes:
             timing_track.append(
                 mido.MetaMessage(
-                    "time_signature", time=self.time_to_tick(ts.time), numerator=ts.numerator, denominator=ts.denominator
+                    "time_signature",
+                    time=self.time_to_tick(ts.time),
+                    numerator=ts.numerator,
+                    denominator=ts.denominator,
                 )
             )
         # Add in each key signature
@@ -1035,17 +1053,22 @@ class MidiFile:
         # Add in all lyrics events
         for lyr in self.lyrics:
             timing_track.append(mido.MetaMessage("lyrics", time=self.time_to_tick(lyr.time), text=lyr.text))
+
         # Add text events
         for tex in self.text_events:
             timing_track.append(mido.MetaMessage("text", time=self.time_to_tick(tex.time), text=tex.text))
+
         # Sort the (absolute-tick-timed) events.
         timing_track.sort(key=functools.cmp_to_key(event_compare))
+
         # Add in an end of track event
         timing_track.append(mido.MetaMessage("end_of_track", time=timing_track[-1].time + 1))
         mid.tracks.append(timing_track)
+
         # Create a list of possible channels to assign - this seems to matter
         # for some synths.
         channels = list(range(16))
+
         # Don't assign the drum channel by mistake!
         channels.remove(9)
         for n, instrument in enumerate(self.instruments):
@@ -1104,10 +1127,13 @@ class MidiFile:
                 ):
                     track[n] = event2
                     track[n + 1] = event1
+
             # Finally, add in an end of track event
             track.append(mido.MetaMessage("end_of_track", time=track[-1].time + 1))
+
             # Add to the list of output tracks
             mid.tracks.append(track)
+
         # Turn ticks to relative time from absolute
         for track in mid.tracks:
             tick = 0
