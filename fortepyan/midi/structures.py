@@ -1,6 +1,5 @@
 import json
 from typing import Optional
-from warnings import showwarning
 from dataclasses import field, dataclass
 
 import numpy as np
@@ -317,13 +316,15 @@ class MidiPiece:
 
         out = MidiPiece(df=df)
 
+        # TODO Think of another way to track this information
+        # maybe add {"warnings": ["merged from multiple pieces"]} to .source?
         # Show warning as the piece might not be musically valid.
-        showwarning(
-            message="The resulting piece may not be musically valid.",
-            category=UserWarning,
-            filename="fortepyan/midi/structures.py",
-            lineno=280,
-        )
+        # showwarning(
+        #     message="The resulting piece may not be musically valid.",
+        #     category=UserWarning,
+        #     filename="fortepyan/midi/structures.py",
+        #     lineno=280,
+        # )
 
         return out
 

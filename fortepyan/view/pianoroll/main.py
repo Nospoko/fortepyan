@@ -81,9 +81,14 @@ def sanitize_midi_piece(piece: MidiPiece) -> MidiPiece:
     duration_threshold = 1200
     if piece.duration > duration_threshold:
         # TODO Logger
-        showwarning("playtime too long! Showing after trim", RuntimeWarning, filename="", lineno=0)
+        showwarning(
+            message="playtime too long! Showing after trim",
+            category=RuntimeWarning,
+            filename="fortepyan/view/pianoroll/main.py",
+            lineno=88,
+        )
         piece = piece.trim(
-            0, duration_threshold, slice_type="by_end", shift_time=False
+            start=0, finish=duration_threshold, slice_type="by_end", shift_time=False
         )  # Added "by_end" to make sure a very long note doesn't cause an error
 
     return piece
