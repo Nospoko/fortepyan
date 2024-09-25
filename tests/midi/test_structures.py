@@ -1,5 +1,4 @@
 import pytest
-import numpy as np
 import pandas as pd
 
 from fortepyan.midi.structures import MidiFile, MidiPiece
@@ -147,7 +146,7 @@ def test_to_midi(sample_midi_piece):
     # Set the expected end time according to the sample MIDI piece
     expected_end_time = 5.5
     # Get the end time of the MIDI track
-    midi_end_time = midi_track.get_end_time()
+    midi_end_time = midi_track.duration
 
     assert midi_end_time == expected_end_time, f"MIDI end time {midi_end_time} does not match expected {expected_end_time}"
 
@@ -263,22 +262,12 @@ def test_midi_file_getitem(index, expected_type):
     assert isinstance(result, expected_type)
 
 
-def test_midi_file_tempo_changes_method():
-    """
-    Test the 'get_tempo_changes' method.
-    """
-    midi_file = MidiFile(path=TEST_MIDI_PATH)
-    tempos = midi_file.get_tempo_changes()
-    assert isinstance(tempos, tuple)
-    assert all(isinstance(arr, np.ndarray) for arr in tempos)
-
-
-def test_midi_file_end_time_method():
+def test_midi_file_duration():
     """
     Test the 'get_end_time' method.
     """
     midi_file = MidiFile(path=TEST_MIDI_PATH)
-    end_time = midi_file.get_end_time()
+    end_time = midi_file.duration
     assert isinstance(end_time, float)
 
 

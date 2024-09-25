@@ -4,12 +4,14 @@ import pathlib
 import functools
 import collections
 from heapq import merge
+from typing import Optional
 from warnings import showwarning
 from dataclasses import field, dataclass
 
 import six
 import mido
 import numpy as np
+import pretty_midi
 import pandas as pd
 
 from fortepyan.midi import tools as midi_tools
@@ -372,20 +374,7 @@ class MidiPiece:
             This would create a MIDI track using the notes in 'my_object' and name it "Violin".
 
         """
-        track = MidiFile()
-        program = 0  # 0 is piano
-        instrument = midi_containers.Instrument(program=program, name=instrument_name)
-
-        # Convert the DataFrame to a list of tuples to avoid pandas overhead in the loop
-        note_data = self.df[["velocity", "pitch", "start", "end"]].to_records(index=False)
-        # Now we can iterate through this array which is more efficient than DataFrame iterrows
-        for velocity, pitch, start, end in note_data:
-            note = midi_containers.Note(velocity=int(velocity), pitch=int(pitch), start=start, end=end)
-            instrument.notes.append(note)
-
-        track.instruments.append(instrument)
-
-        return track
+        return MidiFile.from_piece(self)
 
     @classmethod
     def from_huggingface(cls, record: dict) -> "MidiPiece":
@@ -404,6 +393,130 @@ class MidiPiece:
 
 @dataclass
 class MidiFile:
+    path: Optional[str] = None
+    apply_sustain: bool = True
+    sustain_threshold: int = 62
+    df: pd.DataFrame = field(init=False)
+    raw_df: pd.DataFrame = field(init=False)
+    sustain: pd.DataFrame = field(init=False)
+    control_frame: pd.DataFrame = field(init=False, repr=False)
+    _midi: pretty_midi.PrettyMIDI = field(init=True, repr=False, default=None)
+
+    def __rich_repr__(self):
+        yield "MidiFile"
+        yield self.path
+        yield "notes", self.df.shape
+        yield "sustain", self.sustain.shape
+        yield "minutes", round(self.duration / 60, 2)
+
+    @property
+    def duration(self) -> float:
+        return self._midi.get_end_time()
+
+    @property
+    def notes(self):
+        # This is not great/foolproof, but we already have files
+        # where the piano track is present on multiple "programs"/"instruments
+        notes = sum([inst.notes for inst in self._midi.instruments], [])
+        return notes
+
+    @property
+    def control_changes(self):
+        # See the note for notes ^^
+        ccs = sum([inst.control_changes for inst in self._midi.instruments], [])
+        return ccs
+
+    def _load_midi_file(self):
+        # Read the MIDI object
+        self._midi = pretty_midi.PrettyMIDI(self.path)
+
+        # Extract CC data
+        self.control_frame = pd.DataFrame(
+            {
+                "time": [cc.time for cc in self.control_changes],
+                "value": [cc.value for cc in self.control_changes],
+                "number": [cc.number for cc in self.control_changes],
+            }
+        )
+
+        # Sustain CC is 64
+        ids = self.control_frame.number == 64
+        self.sustain = self.control_frame[ids].reset_index(drop=True)
+
+        # Extract notes
+        raw_df = pd.DataFrame(
+            {
+                "pitch": [note.pitch for note in self.notes],
+                "velocity": [note.velocity for note in self.notes],
+                "start": [note.start for note in self.notes],
+                "end": [note.end for note in self.notes],
+            }
+        )
+        self.raw_df = raw_df.sort_values("start", ignore_index=True)
+
+        if self.apply_sustain:
+            self.df = midi_tools.apply_sustain(
+                df=self.raw_df,
+                sustain=self.sustain,
+                sustain_threshold=self.sustain_threshold,
+            )
+        else:
+            self.df = self.raw_df
+
+    def __post_init__(self):
+        if self.path:
+            self._load_midi_file()
+        else:
+            self.instruments = []
+
+        # Otherwise we get an empty container that we can use
+        # to write *.midi files to disk
+
+    def __getitem__(self, index: slice) -> MidiPiece:
+        return self.piece[index]
+
+    @property
+    def piece(self) -> MidiPiece:
+        source = {
+            "type": "MidiFile",
+            "path": self.path,
+        }
+        out = MidiPiece(
+            df=self.df,
+            source=source,
+        )
+        return out
+
+    @classmethod
+    def from_piece(cls, piece: MidiPiece) -> "MidiFile":
+        _midi = pretty_midi.PrettyMIDI()
+
+        # 0 is piano
+        program = 0
+        instrument_name = "fortepyan"
+        instrument = midi_containers.Instrument(program=program, name=instrument_name)
+
+        # Convert the DataFrame to a list of tuples to avoid pandas overhead in the loop
+        note_data = piece.df[["velocity", "pitch", "start", "end"]].to_records(index=False)
+        # Now we can iterate through this array which is more efficient than DataFrame iterrows
+        for velocity, pitch, start, end in note_data:
+            note = midi_containers.Note(
+                velocity=int(velocity),
+                pitch=int(pitch),
+                start=start,
+                end=end,
+            )
+            instrument.notes.append(note)
+
+        _midi.instruments.append(instrument)
+
+        midi_file = cls(_midi=_midi)
+
+        return midi_file
+
+
+@dataclass
+class LegacyMidiFile:
     path: str = None
     apply_sustain: bool = True
     sustain_threshold: int = 62
@@ -448,8 +561,6 @@ class MidiFile:
         self._initialize_fields()
         if self.path:
             self._process_midi_file()
-        else:
-            self._setup_without_path()
 
     def _initialize_fields(self):
         self.instruments = []
