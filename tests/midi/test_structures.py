@@ -36,6 +36,15 @@ def sample_midi_piece():
     return MidiPiece(df)
 
 
+def test_midi_file_merge():
+    mfa = MidiFile(path=TEST_MIDI_PATH)
+    mfb = MidiFile(path=TEST_MIDI_PATH)
+
+    mf_merged = MidiFile.merge_files([mfa, mfb])
+
+    assert len(mf_merged.notes) == len(mfa.notes) + len(mfb.notes)
+
+
 def test_with_start_end_duration(sample_df):
     piece = MidiPiece(df=sample_df)
     assert piece.df.shape[0] == 5

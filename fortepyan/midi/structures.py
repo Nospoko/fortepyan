@@ -420,9 +420,6 @@ class MidiFile:
         return ccs
 
     def _load_midi_file(self):
-        # Read the MIDI object
-        self._midi = pretty_midi.PrettyMIDI(self.path)
-
         # Extract CC data
         self.control_frame = pd.DataFrame(
             {
@@ -458,12 +455,11 @@ class MidiFile:
 
     def __post_init__(self):
         if self.path:
-            self._load_midi_file()
-        else:
-            self.instruments = []
+            # Read the MIDI object
+            self._midi = pretty_midi.PrettyMIDI(self.path)
 
-        # Otherwise we get an empty container that we can use
-        # to write *.midi files to disk
+        # Otherwise _midi had to be provided as an argument
+        self._load_midi_file()
 
     def __getitem__(self, index: slice) -> MidiPiece:
         return self.piece[index]
@@ -501,6 +497,49 @@ class MidiFile:
             )
             instrument.notes.append(note)
 
+        _midi.instruments.append(instrument)
+
+        midi_file = cls(_midi=_midi)
+
+        return midi_file
+
+    @classmethod
+    def merge_files(cls, midi_files: list["MidiFile"], space: float = 0.0) -> "MidiFile":
+        _midi = pretty_midi.PrettyMIDI()
+
+        # 0 is piano
+        program = 0
+        instrument_name = "fortepyan"
+        instrument = midi_containers.Instrument(program=program, name=instrument_name)
+
+        start_offset = 0
+        notes = []
+        control_changes = []
+        for midi_file in midi_files:
+            piano_track = midi_file._midi.instruments[0]
+            for note in piano_track.notes:
+                new_note = midi_containers.Note(
+                    start=note.start + start_offset,
+                    end=note.end + start_offset,
+                    pitch=note.pitch,
+                    velocity=note.velocity,
+                )
+                notes.append(new_note)
+
+            for cc in piano_track.control_changes:
+                new_cc = midi_containers.ControlChange(
+                    number=cc.number,
+                    value=cc.value,
+                    time=cc.time + start_offset,
+                )
+                control_changes.append(new_cc)
+
+            # Are you sure it's supposed to be the last note, rather than
+            # the last cc?
+            start_offset = notes[-1].end
+
+        instrument.notes = notes
+        instrument.control_changes = control_changes
         _midi.instruments.append(instrument)
 
         midi_file = cls(_midi=_midi)
