@@ -43,6 +43,7 @@ def test_midi_file_merge():
     mf_merged = MidiFile.merge_files([mfa, mfb])
 
     assert len(mf_merged.notes) == len(mfa.notes) + len(mfb.notes)
+    assert mf_merged.duration == mfa.duration + mfb.duration
 
 
 def test_with_start_end_duration(sample_df):

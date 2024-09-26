@@ -536,7 +536,7 @@ class MidiFile:
 
             # Are you sure it's supposed to be the last note, rather than
             # the last cc?
-            start_offset = notes[-1].end
+            start_offset = max(notes[-1].end, control_changes[-1].time) + space
 
         instrument.notes = notes
         instrument.control_changes = control_changes
