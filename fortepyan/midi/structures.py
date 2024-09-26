@@ -7,7 +7,6 @@ import pretty_midi
 import pandas as pd
 
 from fortepyan.midi import tools as midi_tools
-from fortepyan.midi import containers as midi_containers
 
 # The largest we'd ever expect a tick to be
 MAX_TICK = 1e10
@@ -483,13 +482,13 @@ class MidiFile:
         # 0 is piano
         program = 0
         instrument_name = "fortepyan"
-        instrument = midi_containers.Instrument(program=program, name=instrument_name)
+        instrument = pretty_midi.Instrument(program=program, name=instrument_name)
 
         # Convert the DataFrame to a list of tuples to avoid pandas overhead in the loop
         note_data = piece.df[["velocity", "pitch", "start", "end"]].to_records(index=False)
         # Now we can iterate through this array which is more efficient than DataFrame iterrows
         for velocity, pitch, start, end in note_data:
-            note = midi_containers.Note(
+            note = pretty_midi.Note(
                 velocity=int(velocity),
                 pitch=int(pitch),
                 start=start,
@@ -510,7 +509,7 @@ class MidiFile:
         # 0 is piano
         program = 0
         instrument_name = "fortepyan"
-        instrument = midi_containers.Instrument(program=program, name=instrument_name)
+        instrument = pretty_midi.Instrument(program=program, name=instrument_name)
 
         start_offset = 0
         notes = []
@@ -518,7 +517,7 @@ class MidiFile:
         for midi_file in midi_files:
             piano_track = midi_file._midi.instruments[0]
             for note in piano_track.notes:
-                new_note = midi_containers.Note(
+                new_note = pretty_midi.Note(
                     start=note.start + start_offset,
                     end=note.end + start_offset,
                     pitch=note.pitch,
@@ -527,7 +526,7 @@ class MidiFile:
                 notes.append(new_note)
 
             for cc in piano_track.control_changes:
-                new_cc = midi_containers.ControlChange(
+                new_cc = pretty_midi.ControlChange(
                     number=cc.number,
                     value=cc.value,
                     time=cc.time + start_offset,

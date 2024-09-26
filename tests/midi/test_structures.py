@@ -152,13 +152,14 @@ def test_source_update_after_trimming(sample_midi_piece):
 
 def test_to_midi(sample_midi_piece):
     # Create the MIDI track
-    midi_track = sample_midi_piece.to_midi()
+    midi_file = sample_midi_piece.to_midi()
     # Set the expected end time according to the sample MIDI piece
-    expected_end_time = 5.5
+    expected_end_time = sample_midi_piece.duration
     # Get the end time of the MIDI track
-    midi_end_time = midi_track.duration
+    midi_end_time = midi_file.duration
 
     assert midi_end_time == expected_end_time, f"MIDI end time {midi_end_time} does not match expected {expected_end_time}"
+    assert midi_file.df.shape == sample_midi_piece.df.shape
 
 
 def test_add_two_midi_pieces(sample_midi_piece):
