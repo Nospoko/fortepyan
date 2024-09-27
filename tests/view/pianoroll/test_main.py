@@ -26,8 +26,8 @@ def midi_piece_long():
             "velocity": [80],
         }
     )
-    piece = piece + MidiPiece(df)
-    return piece
+    midi_piece_long = piece + MidiPiece(df)
+    return midi_piece_long
 
 
 def test_sanitize_midi_piece(midi_piece):
@@ -37,7 +37,8 @@ def test_sanitize_midi_piece(midi_piece):
 
 
 def test_sanitize_midi_piece_long(midi_piece_long):
-    sanitized_piece = sanitize_midi_piece(midi_piece_long)
+    with pytest.warns(RuntimeWarning, match="playtime too long! Showing after trim"):
+        sanitized_piece = sanitize_midi_piece(midi_piece_long)
     assert isinstance(sanitized_piece, MidiPiece)
     assert sanitized_piece.duration < 1200
 
@@ -62,7 +63,8 @@ def test_draw_pianoroll_with_velocities(midi_piece):
 
 
 def test_draw_pianoroll_with_velocities_long(midi_piece_long):
-    fig = draw_pianoroll_with_velocities(midi_piece_long)
+    with pytest.warns(RuntimeWarning, match="playtime too long! Showing after trim"):
+        fig = draw_pianoroll_with_velocities(midi_piece_long)
     assert isinstance(fig, plt.Figure)
 
     # Accessing the axes of the figure
