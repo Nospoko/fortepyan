@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.0] - 2024-09-27
+### Changed
+- use pretty_midi instead of an internal copy (revert)
+
+### Added
+- streamlit dashboards for development flow
+- MidiFile interface to merge multiple files
+
 ## [0.3.4] - 2024-09-22
 ### Fixed
 - dataframe build method

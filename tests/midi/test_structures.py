@@ -1,5 +1,4 @@
 import pytest
-import numpy as np
 import pandas as pd
 
 from fortepyan.midi.structures import MidiFile, MidiPiece
@@ -35,6 +34,16 @@ def sample_midi_piece():
         }
     )
     return MidiPiece(df)
+
+
+def test_midi_file_merge():
+    mfa = MidiFile(path=TEST_MIDI_PATH)
+    mfb = MidiFile(path=TEST_MIDI_PATH)
+
+    mf_merged = MidiFile.merge_files([mfa, mfb])
+
+    assert len(mf_merged.notes) == len(mfa.notes) + len(mfb.notes)
+    assert mf_merged.duration == mfa.duration + mfb.duration
 
 
 def test_with_start_end_duration(sample_df):
@@ -143,13 +152,14 @@ def test_source_update_after_trimming(sample_midi_piece):
 
 def test_to_midi(sample_midi_piece):
     # Create the MIDI track
-    midi_track = sample_midi_piece.to_midi()
+    midi_file = sample_midi_piece.to_midi()
     # Set the expected end time according to the sample MIDI piece
-    expected_end_time = 5.5
+    expected_end_time = sample_midi_piece.duration
     # Get the end time of the MIDI track
-    midi_end_time = midi_track.get_end_time()
+    midi_end_time = midi_file.duration
 
     assert midi_end_time == expected_end_time, f"MIDI end time {midi_end_time} does not match expected {expected_end_time}"
+    assert midi_file.df.shape == sample_midi_piece.df.shape
 
 
 def test_add_two_midi_pieces(sample_midi_piece):
@@ -263,22 +273,12 @@ def test_midi_file_getitem(index, expected_type):
     assert isinstance(result, expected_type)
 
 
-def test_midi_file_tempo_changes_method():
-    """
-    Test the 'get_tempo_changes' method.
-    """
-    midi_file = MidiFile(path=TEST_MIDI_PATH)
-    tempos = midi_file.get_tempo_changes()
-    assert isinstance(tempos, tuple)
-    assert all(isinstance(arr, np.ndarray) for arr in tempos)
-
-
-def test_midi_file_end_time_method():
+def test_midi_file_duration():
     """
     Test the 'get_end_time' method.
     """
     midi_file = MidiFile(path=TEST_MIDI_PATH)
-    end_time = midi_file.get_end_time()
+    end_time = midi_file.duration
     assert isinstance(end_time, float)
 
 
