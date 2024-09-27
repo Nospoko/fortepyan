@@ -8,9 +8,6 @@ import pandas as pd
 
 from fortepyan.midi import tools as midi_tools
 
-# The largest we'd ever expect a tick to be
-MAX_TICK = 1e10
-
 
 @dataclass
 class MidiPiece:
@@ -504,6 +501,30 @@ class MidiFile:
 
     @classmethod
     def merge_files(cls, midi_files: list["MidiFile"], space: float = 0.0) -> "MidiFile":
+        """
+        Merges multiple MIDI files into a single MIDI file.
+
+        This method combines the notes and control changes from the input list of
+        `MidiFile` objects into a single MIDI track with an optional space between
+        each file's content. All input files are assumed to have a piano track
+        (`program=0`) as the first instrument.
+
+        Args:
+            midi_files (list[MidiFile]): List of `MidiFile` objects to be merged.
+            space (float, optional): Time (in seconds) to insert between the end of
+                one MIDI file and the start of the next. Defaults to 0.0.
+
+        Returns:
+            MidiFile: A new `MidiFile` object containing the merged tracks.
+
+        Note:
+            - Only the first instrument (assumed to be a piano track) from each file
+              is processed.
+            - The last control change time is considered to calculate the start offset
+              for the next file. If there are no control changes, the last note end
+              time is used.
+        """
+
         _midi = pretty_midi.PrettyMIDI()
 
         # 0 is piano
@@ -533,9 +554,9 @@ class MidiFile:
                 )
                 control_changes.append(new_cc)
 
-            # Are you sure it's supposed to be the last note, rather than
-            # the last cc?
-            start_offset = max(notes[-1].end, control_changes[-1].time) + space
+            # Events from the next file have to be shifted to start later
+            last_cc_time = control_changes[-1].time if control_changes else 0
+            start_offset = max(notes[-1].end, last_cc_time) + space
 
         instrument.notes = notes
         instrument.control_changes = control_changes
