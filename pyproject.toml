@@ -28,7 +28,14 @@ dependencies = [
     "Levenshtein>=0.20.9",
     "cmcrameri>=1.5",
 ]
+
 requires-python = ">=3.9"
+
+[project.optional-dependencies]
+dev = [
+  "pre-commit ~= 3.8.0",
+  "streamlit-pianoroll == 0.7.1"
+]
 
 [project.urls]
 Homepage = "https://github.com/Nospoko/fortepyan"

@@ -1,5 +1,5 @@
 import json
-from typing import Optional
+from typing import IO, Optional
 from dataclasses import field, dataclass
 
 import numpy as np
@@ -471,6 +471,22 @@ class MidiFile:
             source=source,
         )
         return out
+
+    @classmethod
+    def from_file(cls, midi_file: IO) -> "MidiFile":
+        """
+        Generic wrapper for the pretty_midi.PrettyMIDI interface.
+
+        Args:
+            midi_file (str or file): Path or file pointer to a MIDI file.
+
+        Returns:
+            MidiFile: A new `MidiFile` object containing the input file.
+        """
+        _midi = pretty_midi.PrettyMIDI(midi_file)
+
+        midi_file = cls(_midi=_midi)
+        return midi_file
 
     @classmethod
     def from_piece(cls, piece: MidiPiece) -> "MidiFile":
