@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.4.1] - 2024-09-29
+### Fixed
+- MAX_TICK setting in pretty midi
+
 ## [0.4.0] - 2024-09-27
 ### Changed
 - use pretty_midi instead of an internal copy (revert)
