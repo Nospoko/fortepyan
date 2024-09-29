@@ -10,3 +10,4 @@ __version__ = "0.4.0"
 # This is a workaround
 # https://github.com/craffel/pretty-midi/issues/112
 pretty_midi.MAX_TICK = 1e10
+pretty_midi.pretty_midi.MAX_TICK = 1e10
