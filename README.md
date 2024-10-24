@@ -1,4 +1,23 @@
 # Fortepyan :musical_keyboard:
+
+`fortepyan` is a glorified pandas wrapper for midi files with piano music.
+The main class to operate with is `MidiPiece`, which gives you access to the notes dataframe, and some useful utilities:
+
+```python
+from fortepyan import MidiPiece
+
+piece = MidiPiece.from_file("foo.mid")
+
+piece.df
+#        pitch  velocity        start          end  duration
+# 0         52        70     0.000000     0.538542  0.538542
+# 1         52        62     0.660417     0.951562  0.291146
+# 2         57        62    20.769792    21.207812  0.438021
+# 3         67        65    62.172917    62.510937  0.338021
+# 4         69        56    62.179167    62.232292  0.053125
+```
+
+
 ![GitHub CI](https://github.com/Nospoko/Fortepyan/actions/workflows/ci_tests.yaml/badge.svg?branch=master) [![Python 3.9](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads) [![PyPI version](https://img.shields.io/pypi/v/fortepyan.svg)](https://pypi.org/project/fortepyan/) [![PyPI download month](https://img.shields.io/pypi/dm/fortepyan.svg)](https://pypi.org/project/fortepyan/)
 
 ### Usage
@@ -11,6 +30,8 @@ piece = ff.MidiPiece.from_file("mymidi.mid")
 ff.view.draw_pianoroll_with_velocities(piece)
 ff.view.make_piano_roll_video(piece, "tmp.mp4")
 ```
+
+## Contributing
 
 ### Development
 

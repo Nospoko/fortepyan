@@ -36,6 +36,11 @@ dev = [
   "pre-commit ~= 3.8.0",
   "streamlit-pianoroll == 0.7.1"
 ]
+test = [
+  "pytest ~= 8.0.0",
+  "pytest-watch == 4.2.0"
+]
+
 
 [project.urls]
 Homepage = "https://github.com/Nospoko/fortepyan"
