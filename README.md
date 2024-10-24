@@ -26,7 +26,7 @@ Using with HuggingFace datasets:
 ```python
 from datasets import load_datasets
 
-dataset = load_dataset("roszcz/maestro-sustain-v2", split="train")
+dataset = load_dataset("epr-labs/maestro-sustain-v2", split="train")
 piece = MidiPiece.from_huggingface(dataset[312])
 piece.source
 # {
