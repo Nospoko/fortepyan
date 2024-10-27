@@ -582,6 +582,9 @@ class MidiFile:
 
         return midi_file
 
+    def write(self, filename):
+        self._midi.write(filename)
+
 
 def __repr__(self):
     return f"MidiFile({self.path})"
