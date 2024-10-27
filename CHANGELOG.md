@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.4.2] - 2024-10-27
+### Added
+- write method in MidiFile
+
 ## [0.4.1] - 2024-09-29
 ### Fixed
 - MAX_TICK setting in pretty midi
