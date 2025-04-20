@@ -22,7 +22,7 @@ dependencies = [
     "pandas",
     "midi2audio>=0.1.1",
     "numpy>=1.23.4",
-    "pretty-midi @ git+https://github.com/craffel/pretty-midi.git@13b09d4",
+    "pretty-midi>=0.2.9",
     "pydub>=0.25",
     "matplotlib>=3.6.2",
     "Levenshtein>=0.20.9",
