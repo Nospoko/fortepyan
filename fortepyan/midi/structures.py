@@ -72,7 +72,7 @@ class MidiPiece:
     def size(self) -> int:
         return self.df.shape[0]
 
-    def time_shift(self, shift_s: float):
+    def time_shift(self, shift_s: float) -> "MidiPiece":
         """
         Shift the start and end times of all notes in the MidiPiece by a specified amount.
 
@@ -90,34 +90,55 @@ class MidiPiece:
             Shifting the entire piece backward by 0.5 seconds:
             >>> midi_piece.time_shift(-0.5)
 
-        Note:
-            - This method modifies the MidiPiece object in place and does not return a new object.
+        Returns:
+            - A new MidiPiece object after shifting
         """
-        self.df.start += shift_s
-        self.df.end += shift_s
+        source = dict(self.source)
+        source["time_shift"] = source.get("time_shift", 0) + shift_s
 
-    def trim(self, start: float, finish: float, shift_time: bool = True, slice_type: str = "standard") -> "MidiPiece":
+        new_piece = MidiPiece(
+            df=self.df.copy(),
+            source=source,
+        )
+
+        new_piece.df.start += shift_s
+        new_piece.df.end += shift_s
+        return new_piece
+
+    def trim(
+        self,
+        start: float,
+        finish: float,
+        shift_time: bool = True,
+        slice_type: str = "standard",
+    ) -> "MidiPiece":
         """
-        Trim a segment of a MIDI piece based on specified start and finish parameters, with options for different slicing types.
+        Trim a segment of a MIDI piece based on specified start and finish parameters,
+        with options for different slicing types.
 
         This method modifies the MIDI piece by selecting a segment from it, based on the `start` and `finish` parameters.
         The segment can be selected through different methods determined by `slice_type`. If `shift_time` is True,
         the timing of notes in the trimmed segment will be shifted to start from zero.
 
         Args:
-            start (float | int): The starting point of the segment. It's treated as a float for 'standard' or 'by_end' slicing types,
-                                and as an integer for 'index' slicing type.
-            finish (float | int): The ending point of the segment. Similar to `start`, it's treated as a float or an integer
-                                depending on the `slice_type`.
-            shift_time (bool, optional): Whether to shift note timings in the trimmed segment to start from zero. Default is True.
-            slice_type (str, optional): The method of slicing. Can be 'standard', 'by_end', or 'index'. Default is 'standard'. See note below.
+            start (float | int): The starting point of the segment.
+                It's treated as a float for 'standard' or 'by_end' slicing types, and as an integer
+                for 'index' slicing type.
+            finish (float | int): The ending point of the segment. Similar to `start`, it's treated
+                as a float or an integer depending on the `slice_type`.
+            shift_time (bool, optional): Whether to shift note timings in the trimmed segment
+                to start from zero. Default is True.
+            slice_type (str, optional): The method of slicing. Can be 'standard',
+                'by_end', or 'index'. Default is 'standard'. See note below.
 
         Returns:
             MidiPiece: A new `MidiPiece` object representing the trimmed segment of the original MIDI piece.
 
         Raises:
-            ValueError: If `start` and `finish` are not integers when `slice_type` is 'index', or if `start` is larger than `finish`.
-            IndexError: If the indices are out of bounds for 'index' slicing type, or if no notes are found in the specified range for other types.
+            ValueError: If `start` and `finish` are not integers when
+                `slice_type` is 'index', or if `start` is larger than `finish`.
+            IndexError: If the indices are out of bounds for 'index' slicing type,
+                or if no notes are found in the specified range for other types.
             NotImplementedError: If the `slice_type` provided is not implemented.
 
         Examples:
@@ -134,13 +155,15 @@ class MidiPiece:
             ![Trimmed MIDI piece](../assets/random_midi_piece.png)
 
         Slice types:
-            The `slice_type` parameter determines how the start and finish parameters are interpreted. It can be one of the following:
+            The `slice_type` parameter determines how the start and finish parameters are interpreted.
+            It can be one of the following:
 
                 'standard': Trims notes that start outside the [start, finish] range.
 
                 'by_end': Trims notes that end after the finish parameter.
 
-                'index': Trims notes based on their index in the DataFrame. The start and finish parameters are treated as integers
+                'index': Trims notes based on their index in the DataFrame.
+                    The start and finish parameters are treated as integers
 
         """
         if slice_type == "index":
@@ -160,9 +183,11 @@ class MidiPiece:
             else:
                 # not implemented
                 raise NotImplementedError(f"Slice type '{slice_type}' is not implemented.")
+
             idx = np.where(ids)[0]
             if len(idx) == 0:
                 raise IndexError("No notes found in the specified range.")
+
             start_idx = idx[0]
             finish_idx = idx[-1] + 1
 
@@ -251,6 +276,7 @@ class MidiPiece:
             first_sound = part.start.min()
             part.start -= first_sound
             part.end -= first_sound
+
             # Adjust the source to reflect the new start time
             start_time_adjustment = first_sound
         else:

@@ -28,7 +28,7 @@ git branch -m release/$PLACEHOLDER_VERSION release/$NEW_VERSION
 
 # Update all files with version numbers
 git add .
-git commit -m "Bump version to $NEW_VERSION"
+git commit -m "Release $NEW_VERSION! :rocket:"
 
 # Reminder message
-echo "Release $NEW_VERSION started. Make any last-minute changes now."
+echo "Release $NEW_VERSION started. Please update the CHANGELOG."
