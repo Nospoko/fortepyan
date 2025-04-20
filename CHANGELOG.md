@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.4.3] - 2025-04-20
+### Changed
+- time_shift is no longer an inplace op
+
 ## [0.4.2] - 2024-10-27
 ### Added
 - write method in MidiFile
