@@ -35,6 +35,15 @@ Package release:
 # from the root directory with clean working tree
 # replace patch with one of: [major, minor, patch]
 ./scripts/release/start_release.sh patch
+
 # Make any additional changes to the release commit
 ./scripts/release/finish_release.sh
+```
+
+#### Tests
+
+Recommended way to run and monitor tests is using pytest-watch:
+
+```sh
+ptw
 ```

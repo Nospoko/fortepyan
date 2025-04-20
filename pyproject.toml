@@ -22,7 +22,7 @@ dependencies = [
     "pandas",
     "midi2audio>=0.1.1",
     "numpy>=1.23.4",
-    "pretty-midi>=0.2.9",
+    "pretty-midi @ git+https://github.com/craffel/pretty-midi.git@13b09d4",
     "pydub>=0.25",
     "matplotlib>=3.6.2",
     "Levenshtein>=0.20.9",
@@ -34,6 +34,7 @@ requires-python = ">=3.9"
 [project.optional-dependencies]
 dev = [
   "pre-commit ~= 3.8.0",
+  "pytest-watch == 4.2.0",
   "streamlit-pianoroll == 0.7.1"
 ]
 
