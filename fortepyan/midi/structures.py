@@ -72,6 +72,15 @@ class MidiPiece:
     def size(self) -> int:
         return self.df.shape[0]
 
+    def copy(self) -> "MidiPiece":
+        notes_df = self.df.copy()
+        source = self.source.copy()
+        piece = MidiPiece(
+            df=notes_df,
+            source=source,
+        )
+        return piece
+
     def time_shift(self, shift_s: float) -> "MidiPiece":
         """
         Shift the start and end times of all notes in the MidiPiece by a specified amount.
