@@ -88,8 +88,9 @@ def sanitize_midi_piece(piece: MidiPiece) -> MidiPiece:
             lineno=88,
         )
         piece = piece.trim(
-            start=0, finish=duration_threshold, slice_type="by_end", shift_time=False
-        )  # Added "by_end" to make sure a very long note doesn't cause an error
+            start=0,
+            finish=duration_threshold,
+        )
 
     return piece
 
