@@ -121,8 +121,11 @@ class MidiPiece:
 
         slice_obj = slice(start_idx, finish_idx)
 
-        # FIXME This is a grave abuse of __getitem__
         out_piece = self.__getitem__(slice_obj)
+
+        # Let the user see the start:finish window as the new 0:duration view
+        out_piece.df.start -= start
+        out_piece.df.end -= start
 
         return out_piece
 
@@ -198,7 +201,6 @@ class MidiPiece:
         out_source = dict(self.source)
         out_source["start"] = self.source.get("start", 0) + index.start
         out_source["finish"] = self.source.get("start", 0) + index.stop
-        out_source["start_time"] = self.source.get("start_time", 0)
         out = MidiPiece(df=part_df, source=out_source)
 
         return out
