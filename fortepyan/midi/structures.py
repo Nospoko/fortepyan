@@ -64,7 +64,6 @@ class MidiPiece:
         if not self.source:
             self.source = {
                 "start": 0,
-                "start_time": 0,
                 "finish": self.size,
             }
 
@@ -208,8 +207,8 @@ class MidiPiece:
 
         # Make sure the piece can always be tracked back to the original file exactly
         out_source = dict(self.source)
-        out_source["start"] = self.source.get("start", 0) + index.start
-        out_source["finish"] = self.source.get("start", 0) + index.stop
+        out_source["start"] = self.source.get("start", 0) + int(index.start)
+        out_source["finish"] = self.source.get("start", 0) + int(index.stop)
         out = MidiPiece(df=part_df, source=out_source)
 
         return out
