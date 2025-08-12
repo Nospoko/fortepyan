@@ -64,13 +64,21 @@ class MidiPiece:
         if not self.source:
             self.source = {
                 "start": 0,
-                "start_time": 0,
                 "finish": self.size,
             }
 
     @property
     def size(self) -> int:
         return self.df.shape[0]
+
+    def copy(self) -> "MidiPiece":
+        notes_df = self.df.copy()
+        source = self.source.copy()
+        piece = MidiPiece(
+            df=notes_df,
+            source=source,
+        )
+        return piece
 
     def time_shift(self, shift_s: float) -> "MidiPiece":
         """
@@ -109,93 +117,25 @@ class MidiPiece:
         self,
         start: float,
         finish: float,
-        shift_time: bool = True,
-        slice_type: str = "standard",
     ) -> "MidiPiece":
-        """
-        Trim a segment of a MIDI piece based on specified start and finish parameters,
-        with options for different slicing types.
+        ids = (self.df.start >= start) & (self.df.start <= finish)
 
-        This method modifies the MIDI piece by selecting a segment from it, based on the `start` and `finish` parameters.
-        The segment can be selected through different methods determined by `slice_type`. If `shift_time` is True,
-        the timing of notes in the trimmed segment will be shifted to start from zero.
+        idx = np.where(ids)[0]
+        if len(idx) == 0:
+            raise IndexError("No notes found in the specified range.")
 
-        Args:
-            start (float | int): The starting point of the segment.
-                It's treated as a float for 'standard' or 'by_end' slicing types, and as an integer
-                for 'index' slicing type.
-            finish (float | int): The ending point of the segment. Similar to `start`, it's treated
-                as a float or an integer depending on the `slice_type`.
-            shift_time (bool, optional): Whether to shift note timings in the trimmed segment
-                to start from zero. Default is True.
-            slice_type (str, optional): The method of slicing. Can be 'standard',
-                'by_end', or 'index'. Default is 'standard'. See note below.
-
-        Returns:
-            MidiPiece: A new `MidiPiece` object representing the trimmed segment of the original MIDI piece.
-
-        Raises:
-            ValueError: If `start` and `finish` are not integers when
-                `slice_type` is 'index', or if `start` is larger than `finish`.
-            IndexError: If the indices are out of bounds for 'index' slicing type,
-                or if no notes are found in the specified range for other types.
-            NotImplementedError: If the `slice_type` provided is not implemented.
-
-        Examples:
-            Trimming using standard slicing:
-            >>> midi_piece.trim(start=1.0, finish=5.0)
-
-            Trimming using index slicing:
-            >>> midi_piece.trim(start=0, finish=10, slice_type="index")
-
-            Trimming with time shift disabled:
-            >>> midi_piece.trim(start=1.0, finish=5.0, shift_time=False)
-
-            An example of a trimmed MIDI piece:
-            ![Trimmed MIDI piece](../assets/random_midi_piece.png)
-
-        Slice types:
-            The `slice_type` parameter determines how the start and finish parameters are interpreted.
-            It can be one of the following:
-
-                'standard': Trims notes that start outside the [start, finish] range.
-
-                'by_end': Trims notes that end after the finish parameter.
-
-                'index': Trims notes based on their index in the DataFrame.
-                    The start and finish parameters are treated as integers
-
-        """
-        if slice_type == "index":
-            if not isinstance(start, int) or not isinstance(finish, int):
-                raise ValueError("Using 'index' slice_type requires 'start' and 'finish' to be integers.")
-            if start < 0 or finish >= self.size:
-                raise IndexError("Index out of bounds.")
-            if start > finish:
-                raise ValueError("'start' must be smaller than 'finish'.")
-            start_idx = start
-            finish_idx = finish + 1
-        else:
-            if slice_type == "by_end":
-                ids = (self.df.start >= start) & (self.df.end <= finish)
-            elif slice_type == "standard":  # Standard slice type
-                ids = (self.df.start >= start) & (self.df.start <= finish)
-            else:
-                # not implemented
-                raise NotImplementedError(f"Slice type '{slice_type}' is not implemented.")
-
-            idx = np.where(ids)[0]
-            if len(idx) == 0:
-                raise IndexError("No notes found in the specified range.")
-
-            start_idx = idx[0]
-            finish_idx = idx[-1] + 1
+        start_idx = idx[0]
+        finish_idx = idx[-1] + 1
 
         slice_obj = slice(start_idx, finish_idx)
 
-        out = self.__getitem__(slice_obj, shift_time)
+        out_piece = self.__getitem__(slice_obj)
 
-        return out
+        # Let the user see the start:finish window as the new 0:duration view
+        out_piece.df.start -= start
+        out_piece.df.end -= start
+
+        return out_piece
 
     def __sanitize_get_index(self, index: slice) -> slice:
         """
@@ -237,19 +177,16 @@ class MidiPiece:
 
         return index
 
-    def __getitem__(self, index: slice, shift_time: bool = True) -> "MidiPiece":
+    def __getitem__(self, index: slice) -> "MidiPiece":
         """
         Get a slice of the MIDI piece, optionally shifting the time of notes.
 
         This method returns a segment of the MIDI piece based on the provided index. It sanitizes the index using the
-        `__sanitize_get_index` method. If `shift_time` is True, it shifts the start and end times of the notes in the
-        segment so that the first note starts at time 0. The method also keeps track of the original piece's information
+        `__sanitize_get_index` method. The method also keeps track of the original piece's information
         in the sliced piece's source data.
 
         Args:
             index (slice): The slicing index to select a part of the MIDI piece. It must be a slice object.
-            shift_time (bool, optional): If True, shifts the start and end times of notes so the first note starts at 0.
-                                    Default is True.
 
         Returns:
             MidiPiece: A new `MidiPiece` object representing the sliced segment of the original MIDI piece.
@@ -261,34 +198,18 @@ class MidiPiece:
             Getting a slice from the MIDI file with time shift:
                 >>> midi_piece[0:10]
 
-            Getting a slice without time shift:
-                >>> midi_piece[5:15, shift_time=False]
-
         Note:
             The `__getitem__` method is a special method in Python used for indexing or slicing objects. In this class,
         it is used to get a slice of a MIDI piece.
         """
         index = self.__sanitize_get_index(index)
-        part = self.df[index].reset_index(drop=True)
-
-        if shift_time:
-            # Shift the start and end times so that the first note starts at 0
-            first_sound = part.start.min()
-            part.start -= first_sound
-            part.end -= first_sound
-
-            # Adjust the source to reflect the new start time
-            start_time_adjustment = first_sound
-        else:
-            # No adjustment to the start time
-            start_time_adjustment = 0
+        part_df = self.df[index].reset_index(drop=True)
 
         # Make sure the piece can always be tracked back to the original file exactly
         out_source = dict(self.source)
-        out_source["start"] = self.source.get("start", 0) + index.start
-        out_source["finish"] = self.source.get("start", 0) + index.stop
-        out_source["start_time"] = self.source.get("start_time", 0) + start_time_adjustment
-        out = MidiPiece(df=part, source=out_source)
+        out_source["start"] = self.source.get("start", 0) + int(index.start)
+        out_source["finish"] = self.source.get("start", 0) + int(index.stop)
+        out = MidiPiece(df=part_df, source=out_source)
 
         return out
 
