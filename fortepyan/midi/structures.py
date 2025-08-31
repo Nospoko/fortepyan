@@ -113,6 +113,12 @@ class MidiPiece:
         new_piece.df.end += shift_s
         return new_piece
 
+    @classmethod
+    def empty(cls) -> "MidiPiece":
+        df = pd.DataFrame(columns=["start", "duration", "velocity", "pitch"])
+        piece = cls(df=df)
+        return piece
+
     def trim(
         self,
         start: float,
@@ -122,7 +128,7 @@ class MidiPiece:
 
         idx = np.where(ids)[0]
         if len(idx) == 0:
-            raise IndexError("No notes found in the specified range.")
+            return MidiPiece.empty()
 
         start_idx = idx[0]
         finish_idx = idx[-1] + 1
