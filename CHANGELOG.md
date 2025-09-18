@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.4.6] - 2025-09-18
+### Fixed
+- soundfont sourcing
+
 ## [0.4.5] - 2025-09-18
 ### Fixed
 - audio rendering
