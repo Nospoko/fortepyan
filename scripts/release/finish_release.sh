@@ -1,5 +1,5 @@
 # Custom message for release
-RELEASE_MESSAGE="Latest release"
+RELEASE_MESSAGE="Latest release :fire:"
 
 # Finishing the Git Flow release
 git flow release finish -m "$RELEASE_MESSAGE"
