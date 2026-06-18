@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.5.1] - 2026-06-18
+### Fixed
+- unwanted prints
+
 ## [0.5.0] - 2026-06-18
 ### Fixed
 - sustain pedal application
