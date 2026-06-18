@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.5.0] - 2026-06-18
+### Fixed
+- sustain pedal application
+
 ## [0.4.6] - 2025-09-18
 ### Fixed
 - soundfont sourcing
