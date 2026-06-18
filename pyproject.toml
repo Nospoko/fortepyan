@@ -33,10 +33,10 @@ requires-python = ">=3.9"
 
 [project.optional-dependencies]
 dev = [
+  "rich==15.0.0",
+  "ipython==9.14.1",
   "pre-commit ~= 3.8.0",
-  "pytest == 7.4.3",
-  "pytest-watch == 4.2.0",
-  "streamlit-pianoroll == 0.7.1"
+  "streamlit-pianoroll == 0.7.1",
 ]
 test = [
   "pytest ~= 8.0.0",

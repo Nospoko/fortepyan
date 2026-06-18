@@ -396,7 +396,7 @@ class MidiFile:
         if self.apply_sustain:
             self.df = midi_tools.apply_sustain(
                 df=self.raw_df,
-                sustain=self.sustain,
+                sustain_df=self.sustain,
                 sustain_threshold=self.sustain_threshold,
             )
         else:
