@@ -4,7 +4,7 @@ import pandas as pd
 
 def apply_sustain(
     df: pd.DataFrame,
-    sustain: pd.DataFrame,
+    sustain_df: pd.DataFrame,
     sustain_threshold: int = 64,
 ) -> pd.DataFrame:
     """
@@ -19,7 +19,7 @@ def apply_sustain(
             The DataFrame containing musical note data. Expected to have columns
             'start', 'end', and 'pitch', where 'start' and 'end' represent the
             start and end times of the notes.
-        sustain (pd.DataFrame):
+        sustain_df (pd.DataFrame):
             The DataFrame containing sustain pedal events. Expected to have columns
             'time' and 'value', where 'time' is the timestamp of the pedal event and
             'value' is the intensity of the pedal press.
@@ -38,12 +38,20 @@ def apply_sustain(
           released, whichever comes first.
     """
     # Mark sustain pedal as down or up based on threshold value
-    sustain["is_down"] = sustain.value >= sustain_threshold
+    sustain_df["is_down"] = sustain_df.value >= sustain_threshold
+    sustain_df["was_down"] = sustain_df.is_down.shift(1).fillna(False)
+
+    # If the instrument is recording only changes, we need to catch cases
+    # where pedal was down on a constant value, and then changed
+    sustain_df["sustain_active"] = sustain_df.is_down | sustain_df.was_down
 
     # Group sustain pedal events by continuous down or up states
-    ids = sustain.is_down
-    sustain["down_index"] = (ids != ids.shift(1)).cumsum()
-    groups = sustain[sustain.is_down].groupby("down_index")
+    ids = sustain_df.sustain_active
+
+    print(ids.sum())
+    print("_-------------------")
+    sustain_df["down_index"] = (ids != ids.shift(1)).cumsum()
+    groups = sustain_df[ids].groupby("down_index")
 
     # Iterate over each group of sustain pedal down events
     for _, gdf in groups:

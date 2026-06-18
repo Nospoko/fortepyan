@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.5.0] - 2026-06-18
+### Fixed
+- sustain pedal application
+
+## [0.4.6] - 2025-09-18
+### Fixed
+- soundfont sourcing
+
+## [0.4.5] - 2025-09-18
+### Fixed
+- audio rendering
+
 ## [0.4.3] - 2025-04-20
 ### Changed
 - time_shift is no longer an inplace op

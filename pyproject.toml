@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "fortepyan"
-version = "0.4.4"
+version = "0.5.0"
 description = "Process MIDI piano with (almost) no pain"
 readme = "README.md"
 authors = [{ name = "Piano For AI", email = "roszcz+fortepyan@gmail.com" }]
@@ -33,10 +33,10 @@ requires-python = ">=3.9"
 
 [project.optional-dependencies]
 dev = [
+  "rich==15.0.0",
+  "ipython==9.14.1",
   "pre-commit ~= 3.8.0",
-  "pytest == 7.4.3",
-  "pytest-watch == 4.2.0",
-  "streamlit-pianoroll == 0.7.1"
+  "streamlit-pianoroll == 0.7.1",
 ]
 test = [
   "pytest ~= 8.0.0",
@@ -59,7 +59,7 @@ packages = [
 ]
 
 [tool.bumpver]
-current_version = "0.4.4"
+current_version = "0.5.0"
 version_pattern = "MAJOR.MINOR.PATCH"
 commit_message = "bump version {old_version} -> {new_version}"
 commit = false

@@ -20,7 +20,7 @@ def testing_midi_file():
 def test_apply_sustain(testing_midi_file, expected_sustain_output):
     applied_sustain = apply_sustain(
         df=testing_midi_file.raw_df,
-        sustain=testing_midi_file.sustain,
+        sustain_df=testing_midi_file.sustain,
         sustain_threshold=testing_midi_file.sustain_threshold,
     )
 

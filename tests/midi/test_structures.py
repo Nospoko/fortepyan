@@ -87,14 +87,16 @@ def test_midi_piece_duration_calculation(sample_df):
 
 
 def test_trim_out_of_bounds(sample_midi_piece):
-    with pytest.raises(IndexError):
-        _ = sample_midi_piece.trim(5.5, 8)  # Out of bounds, should raise an error
+    # Out of bounds, should return empty piece
+    piece = sample_midi_piece.trim(5.5, 8)
+    assert piece.df.empty
 
 
 def test_trim_with_invalid_range(sample_midi_piece):
-    # Assuming the behavior is to raise an error with invalid range
-    with pytest.raises(IndexError):
-        _ = sample_midi_piece.trim(4, 2)  # Invalid range, start is greater than finish
+    # Invalid range, start is greater than finish
+    # Should return empty piece
+    piece = sample_midi_piece.trim(4, 2)
+    assert piece.df.empty
 
 
 def test_to_midi(sample_midi_piece):
