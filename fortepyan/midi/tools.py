@@ -48,8 +48,6 @@ def apply_sustain(
     # Group sustain pedal events by continuous down or up states
     ids = sustain_df.sustain_active
 
-    print(ids.sum())
-    print("_-------------------")
     sustain_df["down_index"] = (ids != ids.shift(1)).cumsum()
     groups = sustain_df[ids].groupby("down_index")
 
