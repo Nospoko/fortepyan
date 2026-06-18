@@ -1,0 +1,9 @@
+:root {
+    --md-primary-fg-color: #944038;
+  }
+
+[data-md-color-scheme="slate"] {
+  --md-hue: 210;
+  /* for better contrast make the links bright */
+  --md-typeset-a-color: #E8A03E;
+}
